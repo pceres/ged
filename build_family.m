@@ -43,15 +43,6 @@ function [status result] = build_family(struct_search,str_archivio,relax_factor_
 % %
 %
 %
-% done! % build_family_recurse(str_archivio,'45369','ancestors_strict') -->
-% il synoptic della prima famiglia è sbagliato --> la seconda famiglia
-% ricercata è errata (self: ID 45922) [file10.csv cambiato rispetto all'archivio build_family_fast_datafile.mat]
-%
-% done! build_family_recurse(str_archivio,'28845','ancestors_strict') --> indica
-% correttamente come nonno materno I7353 (Francesco Ceres), ma nella riga
-% descrittiva è riportata "29134) CAROLINA MARIA CERES" [file10.csv
-% cambiato rispetto all'archivio build_family_fast_datafile.mat]
-%
 % build_family_recurse(str_archivio,'40635','ancestors') --> la ricerca come self per ID 27140 viene iterata più e più volte
 %
 % build_family_recurse(str_archivio,'57458','ancestors_strict') --> ID 46479 viene indicato come padre di 46597, senza motivo
