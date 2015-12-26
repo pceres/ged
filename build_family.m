@@ -47,9 +47,6 @@ function [status result] = build_family(struct_search,str_archivio,relax_factor_
 % dovrebbe filtrare in modo da lasciare una sola associazione per ciascun
 % PID
 %
-% 29066 -->  build_family_recurse indica come padre 29241 GIUSEPPA  CERES,
-%   anche se build family funziona correttamente
-%
 % build_family_recurse(str_archivio,wsdl_url,'26232','ancestors_strict'): 
 % 1) perché non
 % vengono individuati come presenti su pgv gli ID intermedi (es. 26257)?
@@ -57,10 +54,6 @@ function [status result] = build_family(struct_search,str_archivio,relax_factor_
 %
 % 45538 --> come mai si individuano 2 coniugi, di cui si visualizza solo
 % quello corretto (ma vengono restituiti entrambi)?
-%
-% build_family_recurse(str_archivio,wsdl_url,'33849','ancestors')
-% gli ID dopo synoptic non sono corretti, a partire da quello per l'ID
-% 33849
 %
 
 
