@@ -1,4 +1,4 @@
-function build_family_recurse(str_archivio,id_file,direction)
+function build_family_recurse(str_archivio,wsdl_url,id_file,direction)
 %***************************************************************************************************
 %
 % FUNCTION : build_family_recurse.m
@@ -9,7 +9,7 @@ function build_family_recurse(str_archivio,id_file,direction)
 %***************************************************************************************************
 %
 %
-% build_family_recurse(str_archivio,id_file,direction)
+% build_family_recurse(str_archivio,wsdl_url,id_file,direction)
 %
 %
 % input:
@@ -17,6 +17,7 @@ function build_family_recurse(str_archivio,id_file,direction)
 %       archivio  : matrix cell array archive as loaded by 'go.m'
 %       indici_arc: headers for archivio cell array
 %       filename  : filename of the csv source file
+%   wsdl_url     : url of the wsdl page (es. 'http://localhost/work/PhpGedView/genservice.php?wsdl')
 %   id_file      : string with ID inside the file to identify the person
 %   direction    : {'all','ancestors','ancestors_strict','descendants','descendants_strict'}
 %       'all'                : follow all links        
@@ -26,7 +27,7 @@ function build_family_recurse(str_archivio,id_file,direction)
 %       'descendants'        : follow descendants links, and brothers, wife/husband        
 %
 % % es.
-% build_family_recurse(str_archivio,'29095','ancestors_strict')
+% build_family_recurse(str_archivio,'http://localhost/work/PhpGedView/genservice.php?wsdl','29095','ancestors_strict')
 %
 % id_file = '43691';
 % id_file = '28957';
@@ -60,7 +61,7 @@ while ~isempty(queue_id_file)
     queue_id_file = queue_id_file(2:end);
     queue_path = queue_path(2:end);
     
-    [bf_status bf_result bf_text] = build_family_fast(str_archivio,num2str(id_file_i),threshold_search); % run build_family as fast as possible (using buffer)
+    [bf_status bf_result bf_text] = build_family_fast(str_archivio,wsdl_url,num2str(id_file_i),threshold_search); % run build_family as fast as possible (using buffer)
     str_links = analyse_result(str_archivio,bf_result,bf_text,threshold_accept,path,direction); % prune uncertain links, and determine a struct with all links for id_file
     network(id_file_i) = str_links; %#ok<AGROW>  % increase the network
     [queue_id_file queue_path list_links list_PID_new list_id_file_pgv] = add_future_links(queue_id_file,queue_path,id_file_i,str_links,path,list_id_file_pgv); % grow list of next analysises
@@ -331,7 +332,7 @@ str_links.path = path;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [bf_status bf_result bf_text] = build_family_fast(str_archivio,id_file,threshold)
+function [bf_status bf_result bf_text] = build_family_fast(str_archivio,wsdl_url,id_file,threshold) %#ok<INUSL>
 
 global build_family_archive list_archive % must be aligned to the list of vars declared in list_matfile_vars below
 list_matfile_vars = {'build_family_archive','list_archive'}; % must be aligned to the global vars declared above
@@ -340,8 +341,6 @@ debug = 0;
 
 build_family_fast_datafile = 'build_family_fast_datafile.mat';
 step_backup = 10; % every step_backup incremental save, do a backup
-
-wsdl_url = 'http://localhost/work/PhpGedView/genservice.php?wsdl'; %#ok<NASGU>
 
 flg_skipcalc = 0;
 if exist(build_family_fast_datafile,'file')
