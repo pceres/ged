@@ -43,22 +43,9 @@ function [status result] = build_family(struct_search,str_archivio,relax_factor_
 % %
 %
 %
-% Done! build_family_recurse(str_archivio,wsdl_url,'40635','ancestors') -->
-% la ricerca come self per ID 27140 viene iterata più e più volte. [Il
-% problema non si ripresenta azzerando l'archivio]
-%
-% build_family_recurse(str_archivio,wsdl_url,'57458','ancestors_strict') --> ID 46479 viene indicato come padre di 46597, senza motivo
-%
-% build_family_recurse(str_archivio,wsdl_url,'60802','ancestors')
-% id duplicato 60802, ma non viene visualizzato messaggio di errore (mentre
-% con build_family sì
-%
-% [status result] = build_family(struct('id_file','37885'),str_archivio,0,.15,struct('wsdl_url',wsdl_url));
-%
 % 46514: il PID I4143 viene associato a 2 fratelli (ID 46644 e 46430): si
 % dovrebbe filtrare in modo da lasciare una sola associazione per ciascun
 % PID
-%
 %
 % 29066 -->  build_family_recurse indica come padre 29241 GIUSEPPA  CERES,
 %   anche se build family funziona correttamente

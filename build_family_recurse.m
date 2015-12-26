@@ -395,7 +395,7 @@ if ~flg_skipcalc
         % update archive
         save(build_family_fast_datafile,list_matfile_vars{:},'-append')
     else
-        error('Todo!')
+        error('Error in build_family while searching for ID %s!\n\nOutput was:\n%s',id_file,bf_text);
     end
 else
     % session may be expired, so return empty SID to force new identification
