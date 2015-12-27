@@ -291,6 +291,7 @@ disp(bf_text)
 [id_figl soap_figl] = extract(str_archivio,bf_result,'figl','multiple',threshold_accept);
 %[id_cgnt soap_cgnt] = extract(str_archivio,bf_result,'cgnt','multiple',threshold_accept);
 
+fprintf('Synoptic - file id matches:\n')
 fprintf('self: %s\n',num2str(id_self))
 fprintf('padre: %s\n',num2str(id_pad))
 fprintf('madre: %s\n',num2str(id_mad))

@@ -47,14 +47,6 @@ function [status result] = build_family(struct_search,str_archivio,relax_factor_
 % dovrebbe filtrare in modo da lasciare una sola associazione per ciascun
 % PID
 %
-% build_family_recurse(str_archivio,wsdl_url,'26232','ancestors_strict'): 
-% 1) perché non
-% vengono individuati come presenti su pgv gli ID intermedi (es. 26257)?
-% 2) Perché non si individua la moglie ID 37576) ANNA  IANNUZZO?
-%
-% 45538 --> come mai si individuano 2 coniugi, di cui si visualizza solo
-% quello corretto (ma vengono restituiti entrambi)?
-%
 
 
 status = 1;
@@ -241,7 +233,7 @@ function str_PID_links = prepare_PID_links_struct(result)
 % SOAP activity)
 
 disp(' ')
-disp('Synoptic:')
+disp('Synoptic - pgv matches:')
 
 str_PID_links = struct();
 list_field=fieldnames(result);
