@@ -693,6 +693,19 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function answer = item_selection(question_type,question,list_item,error_msg)
+% Input routine to get answer from the use
+% 
+% inputs:
+%   question_type : type of text expected by the user (to be validated)
+%                   'select'    % choose among a set of choices (1-based integer number)
+%                   'date'      % full date (dd/mm/yyyy)
+%                   'date_fast' % full date (dd/mm/yyyy) or simplified date without year (dd/mm)
+%   question      : question to be asked to the user before asking its input
+%   list_item     : list of items to be shown after the question (typically for
+%                   'select' question_type)
+%   error_msg     : error msg to be shown if the input is not correct and the
+%                   question is re-iterated
+%
 
 disp(question)
 for i_item = 1:length(list_item)
@@ -710,7 +723,7 @@ while ancora
         case 'select'
             answer = str2double(answer);
             flg_ok = ~isnan(answer) && ismember(answer,1:length(list_item));
-        case 'date'
+        case {'date','date_fast'}
             if regexp(answer,'^move [\+\-0-9]+$')
                 % change image proposal
                 flg_ok = 1;
@@ -718,10 +731,18 @@ while ancora
                 % check date format
                 z = regexp(answer,'([0-9]{1,2})/([0-9]{1,2})/([0-9]{4,4})','tokens');
                 if ~isempty(z)
+                    % date format is canonical
                     vett = str2double(z{1});
                     flg_ok = ismember(vett(1),1:31) && ismember(vett(2),1:12);
                 else
-                    flg_ok = 0;
+                    z = regexp(answer,'([0-9]{1,2})/([0-9]{1,2})','tokens');
+                    if (~isempty(z) && strcmp(question_type,'date_fast'))
+                        % date format is missing the year, and it is allowed
+                        vett = str2double(z{1});
+                        flg_ok = ismember(vett(1),1:31) && ismember(vett(2),1:12);
+                    else
+                        flg_ok = 0;
+                    end
                 end
             end
         otherwise
@@ -845,14 +866,20 @@ while ( ~flg_got_date )
     
     % chiedi la data di questa immagine
     list_item = {};
-    question_type = 'date';
+    question_type = 'date_fast';
     question = sprintf('Inserisci la prima data nell''immagine, nel formato dd/mm/yyyy:');
-    error_msg = sprintf('Il formato deve essere dd/mm/yyyy (ad es. 31/12/2013), oppure [quit,exit,move +-N]!');
+    error_msg = sprintf('Il formato deve essere dd/mm/yyyy (ad es. 31/12/2013) o dd/mm (31/12), oppure [quit,exit,move +-N]!');
     answer = item_selection(question_type,question,list_item,error_msg);
     if regexp(answer,'^move [\+\-0-9]+$')
         image_proposal = change_image_proposal(image_proposal,answer);
     else
-        date_meas = answer;
+        if sum(answer=='/')==1
+            % missing year (date_fast allows it), just add it from the datenum_target
+            ks_year_target = datestr(datenum_target,'yyyy');
+            date_meas = [answer '/' ks_year_target];
+        else
+            date_meas = answer;
+        end
         flg_got_date = 1;
     end
 end
