@@ -47,6 +47,11 @@ function [status result] = build_family(struct_search,str_archivio,relax_factor_
 % dovrebbe filtrare in modo da lasciare una sola associazione per ciascun
 % PID
 %
+% Verificare che il rapporto di parentela presente nel file (ad es.
+% padre-figlio) sia effettivamente presente sul sito pgv, indipendentemente
+% dall'esistenza delle 2 persone (che potrebbero essere presenti, ma
+% non collegate tra loro)
+%
 
 
 status = 1;

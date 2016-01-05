@@ -48,10 +48,6 @@ switch fix_type
         str_fix.lines_dst_to_correct = [1 inf];
         flg_write = 0;
         
-        % additional checks
-       % disp(' ');disp('SposoPrecedente or SposaPrecedente missing the Name or Surname (single word in the field):')
-       % for col=[38 39],ind=find(~cellfun('isempty',table_fix(:,col)));ind2=find(cellfun('isempty',regexp(table_fix(ind,col),'\s')));table_fix(ind(ind2),[1 col]),end
-        
     case 1 % take lines with only "M" or "G" directly from source file
         file_src = [work_folder csvfile_src];
         file_dst = [work_folder csvfile_dst];
@@ -118,7 +114,7 @@ switch fix_type
         str_fix.pat_substr_ok = '';
         str_fix.lines_dst_to_correct = [1 inf];
         flg_write = 1;
-
+        
     case 8 % move marriage date in 1748-1809 range into "Data di matrimonio religioso" column
         file_src = [work_folder csvfile_src];
         file_dst = [work_folder csvfile_dst];
@@ -128,7 +124,7 @@ switch fix_type
         str_fix.lines_dst_to_correct = [1 inf];
         str_fix.marriage_year_range = [1748 1809];
         flg_write = 1;
-
+        
     otherwise
         error('errore!')
 end
@@ -264,7 +260,7 @@ switch fix_type
             cells_ok  = regexp([line_ok ';'],'[^\;]*;','match');
             min_len = min(length(cells_bad),length(cells_ok))-4;
             matr=[cells_bad(1:min_len);cells_ok(1:min_len)];
-
+            
             v_equal = zeros(1,size(matr,2));
             for i=1:size(matr,2)
                 ks1=matr{1,i};
@@ -349,6 +345,9 @@ check_spouse_sex(table_fix)
 
 % check for sex of father and mother (must be 'M' and 'F'), and other relatives
 check_parents_sex(table_fix)
+
+% cross-check marriage link
+check_marriage_links(table_fix);
 
 
 
@@ -575,7 +574,7 @@ if ( num_col>1 )
     for i=1:size(matr_date,1)
         vett_ks = matr_date(i,:);
         id_i = ks_id{i};
-
+        
         if ~isempty(vett_ks{1})
             % only civil date
             ks_date{i} = vett_ks{1};
@@ -616,7 +615,7 @@ if ( num_col>1 )
                 if ((year1==year2) && (delta_swap<delta) && (delta_swap<20) )
                     fprintf(1,'\t\t\tATTENTION! Possible swap in day\\month columns: ID %s: %s - %s\n',id_i,vett_ks{1},vett_ks{2})
                 end
-            end                
+            end
         else
             % missing civil date
             ks_date{i} = vett_ks{2};
@@ -635,9 +634,9 @@ ind_giorno_nascita = strmatch('Giorno nascita',table_fix(1,1:end));
 
 % {[date,day,month,year,num_date],caption}
 matr_ind = ...
-   { 7          ind_giorno_nascita+0+(0:3)   'nascita';
-     [23 40]    ind_giorno_nascita+4+(0:3)   'matrimonio';
-     35         ind_giorno_nascita+8+(0:3)   'morte';
+    { 7          ind_giorno_nascita+0+(0:3)   'nascita';
+    [23 40]    ind_giorno_nascita+4+(0:3)   'matrimonio';
+    35         ind_giorno_nascita+8+(0:3)   'morte';
     };
 
 flg_fixed = 0;
@@ -907,7 +906,7 @@ for i=2:size(table_fix,1)
     self_sex=ged('determine_sex',ks_nome);
     if ~isempty(self_sex) && strcmp(self_sex,con_sex)
         msg=' ERRORE!!!';
-
+        
         fprintf(1,'\tID %5s:  %20s (%1s) - %20s (%1s) %s\n',ks_id_file,ks_nome,self_sex,ks_con_nome,con_sex,msg)
     end
 end
@@ -930,7 +929,7 @@ matr_sex = {
     'con_mad_nome'  , 'Nome mamma coniuge'  , 'F'
     'pad_pad'       , 'NonnoPaterno'        , 'M'
     'mad_pad'       , 'NonnoMaterno'        , 'M'
-};
+    };
 
 
 disp(' ');disp('Checking sex of parents...')
@@ -1012,7 +1011,7 @@ for i_row=1:length(notes)
             pause(1)
         end
     end
-%     matr_link{ind_table,1} = id;
+    %     matr_link{ind_table,1} = id;
 end
 fprintf(1,'\nAnalyzing %d link notes...\n',size(matr,1))
 
@@ -1117,3 +1116,254 @@ if ~isempty(output)
 else
     fprintf(1,'\tNo bad cross links\n')
 end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function check_marriage_links(table_fix)
+% check for missing marriage links: the marriage link (date, name of spouse) must be present for
+% two records in the file
+
+% fitness threshold to consider a marriage match valid (0 --> perfect match)
+threshold_marriage_fit = 0.15;
+
+% fitness threshold below which an invalid match could be due to a slight mistype
+threshold_marriage_fit_2 = 0.25;
+
+% step to show progress during calculations
+step = 500;
+
+header = table_fix(1,:);
+col = strmatch('Data di matrimonio',header,'exact');
+col_id = strmatch('IDElenco',header,'exact');
+col_nome = strmatch('Nome',header,'exact');
+col_nome2 = strmatch('Secondo nome',header,'exact');
+col_cogn = strmatch('Cognome',header,'exact');
+col_con_nome = strmatch('Nomeconiuge',header,'exact');
+col_con_cogn = strmatch('Cognomeconiuge',header,'exact');
+
+disp(' ');disp('Checking marriage links')
+
+ind_not_empty = find(~cellfun('isempty',table_fix(2:end,col)))+1; % all non empty lines, discarding header
+
+% find links
+vett_matr       = table_fix(ind_not_empty,col);
+vett_id         = table_fix(ind_not_empty,col_id);
+vett_nome       = table_fix(ind_not_empty,col_nome);
+vett_nome2      = table_fix(ind_not_empty,col_nome2);
+vett_cogn       = table_fix(ind_not_empty,col_cogn);
+vett_con_nome   = table_fix(ind_not_empty,col_con_nome);
+vett_con_cogn   = table_fix(ind_not_empty,col_con_cogn);
+
+vett_err_code(length(ind_not_empty)) = 0;
+vett_fitness(length(ind_not_empty)) = 0;
+vett_err_msg{length(ind_not_empty)} = '';
+vett_id_con{length(ind_not_empty)} = [];
+debug = 0;
+for i_row = 1:length(ind_not_empty)
+    %ind_table   = ind_not_empty(i_row);
+    matr_i      = vett_matr{i_row};
+    id          = vett_id{i_row};
+    nome        = vett_nome{i_row};
+    nome2       = vett_nome2{i_row};
+    cogn        = vett_cogn{i_row};
+    con_nome    = vett_con_nome{i_row};
+    con_cogn    = vett_con_cogn{i_row};
+    
+    nome_full = strtrim([nome ' ' nome2]);
+    
+    % enable debug on a single ID
+    if strcmp(id,'<disabled>')
+        debug = 1;
+    end
+    
+    if (rem(i_row,step)==0)
+        fprintf(1,'%d/%d...\n',i_row,length(ind_not_empty))
+    end
+    
+    ind_match = setdiff(strmatch(matr_i,vett_matr,'exact'),i_row); % records whose marriage date matches
+    
+    if debug
+        fprintf('\n\tUnder check ID %s: %s %s married to %s %s on %s\n',id,nome_full,cogn,con_nome,con_cogn,matr_i)
+    end
+    
+    err_code = 0;
+    err_msg = 'marriage link ok';
+    id_con = NaN;
+    if isempty(ind_match)
+        % missing marriage link
+        err_code = 1;
+        fit_best = NaN;
+        err_msg = 'missing matching marriage date';
+    else
+        % one or more marriages in the same date, check if one matches
+        matr_val = [];
+        for i_match = 1:length(ind_match)
+            i_row_ = ind_match(i_match);
+            
+            %ind_table_  = ind_not_empty(i_row_);
+            matr_i_     = vett_matr{i_row_};
+            id_         = vett_id{i_row_};
+            nome_       = vett_nome{i_row_};
+            nome2_      = vett_nome2{i_row_};
+            cogn_       = vett_cogn{i_row_};
+            con_nome_   = vett_con_nome{i_row_};
+            con_cogn_   = vett_con_cogn{i_row_};
+            
+            nome_full_ = strtrim([nome_ ' ' nome2_]);
+            
+            if debug
+                fprintf('\t\twith ID %s: %s %s married to %s %s on %s\n',id_,nome_full,cogn_,con_nome_,con_cogn_,matr_i_)
+            end
+            
+            v_val_nome_     = ged('strfielddist',nome_full,con_nome_);
+            v_val_cogn_     = ged('strfielddist',cogn,con_cogn_);
+            v_val_con_nome_ = ged('strfielddist',con_nome,nome_full_);
+            v_val_con_cogn_ = ged('strfielddist',con_cogn,cogn_);
+            
+            matr_val(i_match,:) = [v_val_nome_;v_val_cogn_;v_val_con_nome_;v_val_con_cogn_]; %#ok<AGROW>
+        end
+        
+        if debug
+            disp(matr_val)
+        end
+        
+        v_fitness = sum(matr_val,2)/size(matr_val,2);
+        [temp ind_best] = sort(v_fitness);
+        
+        % take the best match
+        i_match  = ind_best(1);
+        fit_best = temp(1);
+        
+        i_row_ = ind_match(i_match);
+        
+        %ind_table_  = ind_not_empty{i_row_};
+        matr_i_     = vett_matr{i_row_};
+        id_         = vett_id{i_row_};
+        nome_       = vett_nome{i_row_};
+        nome2_      = vett_nome2{i_row_};
+        cogn_       = vett_cogn{i_row_};
+        con_nome_   = vett_con_nome{i_row_};
+        con_cogn_   = vett_con_cogn{i_row_};
+        
+        nome_full_ = strtrim([nome_ ' ' nome2_]);
+        
+        if debug
+            fprintf('\t\tbest match found with ID %s: %s %s married to %s %s on %s (fitness %f)\n',id_,nome_full_,cogn_,con_nome_,con_cogn_,matr_i_,fit_best)
+        end
+        
+        if (fit_best < threshold_marriage_fit)
+            % marriage match found
+            id_con = id_;
+        else
+            %disp('*** ATTENTION: no valid marriage match found!')
+            if fit_best < threshold_marriage_fit_2
+                
+                if rem(length(ind_match),2)==1
+                    % if there is only one match (with additional couples),
+                    % show the id corresponding to the best match
+                    id_con = id_;
+                end
+            end
+            
+            err_code = 2;
+            err_msg = 'no valid marriage match';
+        end
+    end
+    
+    vett_fitness(i_row)  = fit_best;
+    vett_err_code(i_row) = err_code;
+    vett_err_msg{i_row}  = err_msg;
+    vett_id_con{i_row}   = id_con;
+end
+vett_fitness  = vett_fitness';
+vett_err_code = vett_err_code';
+vett_err_msg  = vett_err_msg';
+vett_id_con   = vett_id_con';
+
+
+%% prepare Matlab commands to continue searches
+fprintf(1,'\n\n\n%%**************************\n%%*** Prepare Matlab commands to continue searches \n%%**************************\n\n')
+diary off
+try delete('marriage_link_analysis.m');catch;end %#ok<CTCH>
+diary('marriage_link_analysis.m')
+for i_code = 1:3
+    switch i_code
+        case 1
+            % threshold_marriage_fit<=fitness<threshold_marriage_fit_2 --> no valid marriage match, but a good fitness, maybe a mistype?
+            ind_err_code = find(vett_fitness>=threshold_marriage_fit & vett_fitness<threshold_marriage_fit_2);
+            ks_code = 'Medium fitness matches';
+        case 2
+            % fitness>=threshold_marriage_fit_2 --> no valid marriage match, and a very low fitness
+            ind_err_code = find(vett_fitness>=threshold_marriage_fit_2);
+            ks_code = 'Low fitness matches';
+        case 3
+            % fitness==NaN --> no marriage match based on the marriage date
+            ind_err_code = find(isnan(vett_fitness));
+            ks_code = 'Missing matches';
+        otherwise
+            error('Error: todo')
+    end
+    
+    fprintf(1,'\n\ndisp('' '');disp('' '');disp(''-- %s --'');disp('' '');disp('' '');\n\n',ks_code)
+    for i_match = 1:length(ind_err_code)
+        i_row = ind_err_code(i_match);
+        
+        %ind_table   = ind_not_empty(i_row);
+        matr_i      = vett_matr{i_row};
+        id          = vett_id{i_row};
+        nome        = vett_nome{i_row};
+        nome2       = vett_nome2{i_row};
+        cogn        = vett_cogn{i_row};
+        con_nome    = vett_con_nome{i_row};
+        con_cogn    = vett_con_cogn{i_row};
+        fitness     = vett_fitness(i_row);
+        %err_code    = vett_err_code(i_row);
+        %err_msg     = vett_err_msg{i_row};
+        %id_con      = vett_id_con{i_row};
+        
+        nome_full = strtrim([nome ' ' nome2]);
+        
+        fprintf(1,'\ndisp('' '');disp('' '');disp(''Under check ID %s: %s %s married to %s %s on %s ... (%d matches with the same marriage date, best fit: %f)'')\n',id,str_escape(nome_full),str_escape(cogn),str_escape(con_nome),str_escape(con_cogn),matr_i,length(ind_match),fitness)
+        cmd = ['Result = ged(''find_person'',struct  ( ''cogn'',''' str_escape(con_cogn) ''',''nome'',''' str_escape(con_nome) ''',''con_cogn'',''' str_escape(cogn) ''',''con_nome'',''' str_escape(nome_full) ''' ),str_archivio,0.25,[]);'];
+        disp(cmd)
+    end
+end
+diary off
+edit('marriage_link_analysis.m')
+
+
+%% show results
+fprintf(1,'\n\n\n%%**************************\n%%*** Show results \n%%**************************\n\n')
+list_code = unique(vett_err_code);
+for i_code = 1:length(list_code)
+    err_code_i = list_code(i_code);
+    ind_err_code = find(vett_err_code==err_code_i);
+    err_msg_i = vett_err_msg{ind_err_code(1)};
+    fprintf('\n\n\t***  %s:\n',err_msg_i);
+    for i_match = 1:length(ind_err_code)
+        i_row = ind_err_code(i_match);
+        
+        %ind_table   = ind_not_empty(i_row);
+        matr_i      = vett_matr{i_row};
+        id          = vett_id{i_row};
+        nome        = vett_nome{i_row};
+        nome2       = vett_nome2{i_row};
+        cogn        = vett_cogn{i_row};
+        con_nome    = vett_con_nome{i_row};
+        con_cogn    = vett_con_cogn{i_row};
+        fitness     = vett_fitness(i_row);
+        %err_code    = vett_err_code(i_row);
+        err_msg     = vett_err_msg{i_row};
+        id_con      = vett_id_con{i_row};
+        
+        fprintf('\t\t%d) %s - ID %s: %s %s %s married to %s %s on %s (--> ID %s, fitness %f)\n',i_match,err_msg,id,nome,nome2,cogn,con_nome,con_cogn,matr_i,id_con,fitness)
+    end
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ks = str_escape(ks_in)
+% replace quotes with double quotes
+
+ks = strrep(ks_in,'''','''''');

@@ -40,7 +40,6 @@ end
 switch action
     case 'search'
         close all
-        clc
         
         quiet = 1;
         
