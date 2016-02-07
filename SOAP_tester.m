@@ -66,6 +66,23 @@ diary('off'),diary('on')
 
 
 %
+% retrieve info on ID of last individual in the gedcom
+%
+
+position    = 'last';
+type        = 'INDI';
+
+fprintf(1,'\nRetrieving %s xref for %s (getXref)..\n',position,type)
+diary('off'),diary('on')
+result_out = getXref(class_instance,SID,position,type);
+
+PID_last = result_out;
+fprintf(1,'    ...last ID is %s..\n',PID_last)
+diary('off'),diary('on')
+
+
+
+%
 % retrieve info on individual ID's in the gedcom
 %
 
@@ -93,7 +110,6 @@ diary('off'),diary('on')
 fprintf(1,'\nRetrieving existing data on %s first time..\n',PID)
 diary('off'),diary('on')
 result_out = getPersonByID(class_instance,SID,PID);
-g = result_out.gedcom;
 len = min(200,length(result_out.gedcom));
 
 display(result_out);
@@ -106,7 +122,6 @@ diary('off'),diary('on')
 fprintf(1,'\nRetrieving existing data on %s second time..\n',PID)
 diary('off'),diary('on')
 result_out = getPersonByID(class_instance,SID,PID);
-g = result_out.gedcom;
 len = min(200,length(result_out.gedcom));
 
 display(result_out);
@@ -145,9 +160,10 @@ fprintf(1,'\nRetrieving existing data on %s with wrong SID..\n',PID)
 diary('off'),diary('on')
 try
     result_out = getPersonByID(class_instance,'WrongSid',PID);
+    len = min(300,length(result_out.gedcom));
     
     display(result_out);
-    display(result_out.gedcom(1:300));
+    display(result_out.gedcom(1:len));
 catch
     ks = lasterr;
     fprintf(1,'*** Errore nell''esecuzione del comando: %s\n',ks)
@@ -178,9 +194,10 @@ diary('off')
 fprintf(1,'\nRetrieving existing data on %s third time..\n',PID)
 diary('off'),diary('on')
 result_out = getPersonByID(class_instance,SID,PID);
+len = min(200,length(result_out.gedcom));
 
 display(result_out);
-display(result_out.gedcom(1:200));
+display(result_out.gedcom(1:len));
 diary('off'),diary('on')
 
 
@@ -194,9 +211,10 @@ fprintf(1,'\nRetrieving existing data on %s with FID..\n',FID)
 diary('off'),diary('on')
 try
     result_out = getFamilyByID(class_instance,SID,FID);
+    len = min(300,length(result_out.gedcom));
     
     display(result_out);
-    display(result_out.gedcom(1:300));
+    display(result_out.gedcom(1:len));
 catch
     ks = lasterr;
     fprintf(1,'*** Errore nell''esecuzione del comando: %s\n',ks)
