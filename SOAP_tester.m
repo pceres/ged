@@ -1,16 +1,19 @@
-function SOAP_tester(password)
+function SOAP_tester(wsdl_url,password)
 %
 % PhpGedView SOAP api tester
 %
 % Usage:
 % password = '<your_password>' % password for 'uploader' user
-% clc,SOAP_tester(password),diary off
+% wsdl_url = '<wsdl url>'
+% clc,SOAP_tester(wsdl_url,password),diary off
 %
 
 
 %
 % init SOAP api via wsdl url
 %
+
+flgRegenerateClass = 0; % 1 --> recreate the method files in the hidden @GenealogyService folder; 0 --> just try to use the xisting files
 
 logfile = 'soap_logfile.txt';
 diary off
@@ -19,19 +22,28 @@ if exist(logfile,'file')
 end
 diary(logfile)
 
-wsdl_url = 'http://ars.altervista.org/PhpGedView/genservice.php?wsdl';
-
-service_name = createClassFromWsdl(wsdl_url);
+if flgRegenerateClass
+    service_name = createClassFromWsdl(wsdl_url); %#ok<UNRCH>
+else
+    service_name = 'GenealogyService';
+end
 
 service_folder = [pwd filesep '@' service_name]; % created SOAP mfile folder
-
-z=dir([service_folder filesep '*.m']);
-list_methods = {z.name}'; % available SOAP methods
 
 class_instance = eval(service_name); % SOAP object
 
 clc
 display(class_instance)
+
+% available SOAP methods
+z=dir([service_folder filesep '*.m']);
+list_methods = {z.name}'; 
+fprintf(1,'\nAvailable methods:\n')
+for i_method=1:length(list_methods)
+    ks=[sprintf('\t') list_methods{i_method}(1:end-2)];
+    disp(ks);
+end
+disp(' ');
 
 
 %
@@ -39,43 +51,66 @@ display(class_instance)
 %
 
 username = 'uploader';
-%password = '<your password here>';
+%password = '<your password here>'; ATTENTION! If the wrong password is inserted, an out of memory message will be returned
 gedcom = 'caposele';
 compression = 'none';
 data_type = 'GEDCOM';
 
-disp(sprintf('\nAuthenticating user %s..',username))
+fprintf(1,'\nAuthenticating user %s (Authenticate)..\n',username)
 diary('off'),diary('on')
 result_out = Authenticate(class_instance,username,password,gedcom,compression,data_type); % SOAP function handler created by createClassFromWsdl
 
 SID = result_out.SID; % authentication session token
-disp(sprintf('    ...got session ID %s..',SID))
+fprintf(1,'    ...got session ID %s..\n',SID)
 diary('off'),diary('on')
+
+
+%
+% retrieve info on individual ID's in the gedcom
+%
+
+position    = 'all';
+type        = 'INDI';
+
+fprintf(1,'\nRetrieving %s xref for %s (getXref)..\n',position,type)
+diary('off'),diary('on')
+list_PID = getXref(class_instance,SID,position,type);
+fprintf(1,'    ...got %d ID''s..\n',length(list_PID))
+
+ind = ceil(length(list_PID)*rand);
+PID = list_PID{ind}; % pick a random PID
+fprintf(1,'    ...picking ID %s..\n',PID)
+diary('off'),diary('on')
+
 
 
 %
 % retrieve info on Person by ID
 %
 
-PID = 'I0000';
+%PID = 'I0000';
 
-disp(sprintf('\nRetrieving existing data on %s first time..',PID))
+fprintf(1,'\nRetrieving existing data on %s first time..\n',PID)
 diary('off'),diary('on')
 result_out = getPersonByID(class_instance,SID,PID);
+g = result_out.gedcom;
+len = min(200,length(result_out.gedcom));
 
 display(result_out);
-display(result_out.gedcom(1:200));
+display(result_out.gedcom(1:len));
 diary('off'),diary('on')
 
 
-PID = 'I0000';
+% PID = 'I0000';
 
-disp(sprintf('\nRetrieving existing data on %s second time..',PID))
+fprintf(1,'\nRetrieving existing data on %s second time..\n',PID)
 diary('off'),diary('on')
 result_out = getPersonByID(class_instance,SID,PID);
+g = result_out.gedcom;
+len = min(200,length(result_out.gedcom));
 
 display(result_out);
-display(result_out.gedcom(1:200));
+display(result_out.gedcom(1:len));
 diary('off'),diary('on')
 
 
@@ -104,9 +139,9 @@ diary('off'),diary('on')
 % retrieve info on Person by ID (with wrong PID)
 %
 
-PID = 'I0000';
+% PID = 'I0000';
 
-disp(sprintf('\nRetrieving existing data on %s with wrong SID..',PID))
+fprintf(1,'\nRetrieving existing data on %s with wrong SID..\n',PID)
 diary('off'),diary('on')
 try
     result_out = getPersonByID(class_instance,'WrongSid',PID);
@@ -121,12 +156,12 @@ end
 diary('off'),diary('on')
 
 
-PID = 'ZZZZ9999';
+PID_bad = 'ZZZZ9999';
 
-disp(sprintf('\nRetrieving wrong data on %s..',PID))
+fprintf(1,'\nRetrieving wrong data on %s..\n',PID_bad)
 diary('off'),diary('on')
 try
-    result_out = getPersonByID(class_instance,SID,PID);
+    result_out = getPersonByID(class_instance,SID,PID_bad);
     
     display(result_out);
     display(result_out.gedcom);
@@ -138,9 +173,9 @@ end
 diary('off')
 
 
-PID = 'I0000';
+% PID = 'I0000';
 
-disp(sprintf('\nRetrieving existing data on %s third time..',PID))
+fprintf(1,'\nRetrieving existing data on %s third time..\n',PID)
 diary('off'),diary('on')
 result_out = getPersonByID(class_instance,SID,PID);
 
@@ -155,7 +190,7 @@ diary('off'),diary('on')
 
 FID = 'F309';
 
-disp(sprintf('\nRetrieving existing data on %s with FID..',FID))
+fprintf(1,'\nRetrieving existing data on %s with FID..\n',FID)
 diary('off'),diary('on')
 try
     result_out = getFamilyByID(class_instance,SID,FID);
