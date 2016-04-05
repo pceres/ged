@@ -25,6 +25,7 @@ switch tag
             'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
             'TEORA'                 , 'Teora, Avellino, Campania, ITA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
+            'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
             '(F|PH)ILIPPEVILLE'     , 'Philippeville, Skikda, Skikda, DZA';
             'NEWARK'                , 'Newark, Essex, New Jersey, USA';
