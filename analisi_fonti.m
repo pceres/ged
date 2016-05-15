@@ -582,7 +582,7 @@ match_addr = [];
 
 % se la data cercata è compresa tra l'ultima data, e l'ultima
 % data+max_delta, considera l'ultima immagine come se contenesse la data
-max_delta = 30; % [gg]
+max_delta = 120; % [gg] % se la pagina è compatta, ci possono essere diversi mesi in un'unica foto
 
 ind_stream = find(ismember(matr_source(:,3),stream_filter));
 
