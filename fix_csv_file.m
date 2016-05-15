@@ -31,11 +31,11 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-
-work_folder     = 'archivio/file10/file10_rc_20151028_/';
+tag = 'file10_rc_20160413';
+work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
-csvfile_dst     = 'file10_rc_20151028_.csv';    % proposed update, read only
-csvfile_fix     = 'file10_rc_20151028_ok.csv';  % proposed update, rewritten by the script
+csvfile_dst     = [tag '_.csv'];    % proposed update, read only
+csvfile_fix     = [tag '_ok.csv'];  % proposed update, rewritten by the script
 
 
 switch fix_type
