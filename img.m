@@ -2,9 +2,11 @@ function img
 
 pgvroot = 'http://ars.altervista.org/PhpGedView/';
 gedcom = 'caposele';
-SID = 'I18';
-SID = 'I0000';
+SID = 'I18'; % Alex
+SID = 'I0000'; % io
+%SID = 'I10391'; % padre di Elisa Curcio
 
+debug_level = 2; % 0: no output; 1: only text msgs; 2: graphs
 
 str_pgv_img = struct('pgvroot',pgvroot,'gedcom',gedcom,'SID',SID);
 
@@ -18,7 +20,6 @@ url_pgvtext = [pgvroot 'treenav.php?ged=' gedcom '&rootid=' SID];
 text0 = urlread(url_pgvtext);
 text = regexp(text0,'<div id="out_nav".*','match'); % only crc the useful part with genealogical data
 text = text{1};
-% load archivio_text text
 
 crc_new = round(rand*crc_module)%get_crc(text,crc_module);
 
@@ -30,12 +31,12 @@ else
     img_crc_new = NaN;
 end
 
-flg_rebuild = needs_rebuild(str_SID,SID,crc_new,img_crc_new);
+flg_rebuild = needs_rebuild(str_SID,SID,crc_new,img_crc_new,debug_level);
 
 filename_out = filename; % rewrite the image
 
 if flg_rebuild
-    img_new = rebuild_img(str_pgv_img,filename_out);
+    img_new = rebuild_img(str_pgv_img,filename_out,debug_level);
     img_crc_new = get_crc(img_new(:),crc_module);
     
     update_archive(filename_arc,str_SID,SID,crc_new,img_crc_new);
@@ -68,7 +69,7 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function flg_rebuild = needs_rebuild(str_SID,SID,crc_new,img_crc_new)
+function flg_rebuild = needs_rebuild(str_SID,SID,crc_new,img_crc_new,debug_level)
 
 if isfield(str_SID,SID)
     crc_old     = str_SID.(SID).crc;
@@ -81,16 +82,16 @@ end
 flg_rebuild = 0;
 if (crc_old ~= crc_new)
     flg_rebuild = 1;
-    fprintf('Different CRC for data for id %s: %d --> %d\n',SID,crc_old,crc_new)
+    disp_my(sprintf('Different CRC for data for id %s: %d --> %d',SID,crc_old,crc_new),debug_level)
 else
-    fprintf('No CRC change in data for id %s: %d\n',SID,crc_new)
+    disp_my(sprintf('No CRC change in data for id %s: %d',SID,crc_new),debug_level)
 end
 
 if (img_crc_old ~= img_crc_new)
     flg_rebuild = 1;
-    fprintf('Need to rebuild image for id %s\n',SID)
+    disp_my(sprintf('Need to rebuild image for id %s',SID),debug_level)
 else
-    fprintf('Unchanged image for id %s\n',SID)
+    disp_my(sprintf('Unchanged image for id %s',SID),debug_level)
 end
 
 
@@ -103,9 +104,10 @@ filename = [SID '.jpg'];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function img4 = rebuild_img(str_pgv_img,filename_out)
+function img4 = rebuild_img(str_pgv_img,filename_out,debug_level)
 
 jpg_quality = 95;
+dest_folder = 'snapshot';
 
 pgvroot = str_pgv_img.pgvroot;
 gedcom = str_pgv_img.gedcom;
@@ -113,20 +115,21 @@ SID = str_pgv_img.SID;
 
 filename = SID2filename(SID);
 
-fprintf('Rebuilding image %s for id %s...\n',filename,SID)
+disp_my(sprintf('Rebuilding image %s for id %s...',filename,SID),debug_level)
 
 % download the image file
-list_images = {SID};
 url_format = [pgvroot 'treenav.php?ged=' gedcom '&rootid=<PID> '];
-list_filename = download_pgv_images(list_images,url_format);
+url = download_pgv_images(SID,url_format);
 
-filename_dwnl = ['snapshot' filesep filename];
-fprintf('\tDownloaded %s\n',filename_dwnl)
+% save fullscreen snapshot and get the image
+filename_dwnl = [dest_folder filesep filename];
+img = save_img_snapshot(filename_dwnl);
+disp_my(sprintf('\t%s %s',SID,url),debug_level)
+disp_my(sprintf('\tDownloaded %s',filename_dwnl),debug_level)
 
-img = imread(filename_dwnl);
-debug = 0;
-[img3 result_whiteness] = crop_img(img,debug);
-fprintf('\tCropped %s\n',filename)
+[img3 result_whiteness] = crop_img(img,debug_level);
+fitness_crop = sum(1-result_whiteness)+sum(result_whiteness<1)*10;
+disp_my(sprintf('\tCropped %s (fitness %.2f)',filename,fitness_crop),debug_level)
 
 imwrite(img3,filename_out,'jpeg','mode','lossy','quality',jpg_quality);
 img4 = imread(filename_out); % reload the image to get the real data
@@ -134,22 +137,35 @@ img4 = imread(filename_out); % reload the image to get the real data
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [img3 result_whiteness] = crop_img(img,debug)
+function img = save_img_snapshot(filename_dwnl)
 
-if debug
-    image(img)
+robot = robot_wrapper('init');
+
+dest_folder = fileparts(filename_dwnl);
+if ( ~isempty(dest_folder) && ~exist(dest_folder,'dir') )
+    mkdir(dest_folder)
 end
 
-debug1 = debug;
-img2 = static_crop(img,debug1);
-
-debug2 = debug;
-[img3 result_whiteness] = smart_crop(img2,debug2);
+robot_wrapper('save_snapshot',{robot,filename_dwnl});
+img = imread(filename_dwnl);
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function img2 = static_crop(img,debug)
+function [img3 result_whiteness] = crop_img(img,debug_level)
+
+if (debug_level >= 2)
+    image(img)
+end
+
+img2 = static_crop(img,debug_level);
+
+[img3 result_whiteness] = smart_crop(img2,debug_level);
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function img2 = static_crop(img,debug_level)
 
 height = size(img,1); % 1080
 width  = size(img,2); % 1920
@@ -161,7 +177,7 @@ y2 = round(height*0.9296);% 1004
 
 img2 = img(y1:y2,x1:x2,:);
 
-if debug
+if (debug_level >= 2)
     image(img);
     axis image
     hold on
@@ -173,9 +189,9 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [img3 result_whiteness] = smart_crop(img2,debug)
+function [img3 result_whiteness] = smart_crop(img2,debug_level)
 
-if debug
+if (debug_level >= 2)
     h = figure;
     image(img2);
     axis image
@@ -219,12 +235,10 @@ for i_dir = 1:4
             disp('todo')
     end
     
-    [k whiteness] = detect_border(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,h,debug);
+    [k whiteness] = detect_border(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,h,debug_level);
     result_k(i_dir) = k;
     result_whiteness(i_dir) = whiteness;
 end
-
-fitness_crop = sum(1-result_whiteness)+sum(result_whiteness<1)*10
 
 result_coord = round([result_k(1:2)*width result_k(3:4)*height]);
 
@@ -237,7 +251,7 @@ y1 = max(1,result_coord(3)-bordery);
 y2 = min(height,result_coord(4)+bordery);
 
 img3 = img2(y1:y2,x1:x2,:);
-if debug
+if (debug_level >= 2)
     figure
     image(img3);
     axis image
@@ -247,7 +261,7 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [k whiteness] = detect_border(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,h,debug)
+function [k whiteness] = detect_border(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,h,debug_level)
 
 k_ok = 0;
 k_nok = 1;
@@ -260,7 +274,7 @@ while ancora
     k_ = (k_ok+k_nok)/2;
     tmp_debug = 0;
     if strcmp(dir_tag,'up')
-        %         tmp_debug = 1;
+        % tmp_debug = debug_level;
     end
     [ok coord] = is_line_all_white(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,k_,h,tmp_debug);
     
@@ -281,7 +295,7 @@ else
 end
 
 % redraw for plot
-[ok coord whiteness] = is_line_all_white(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,k_ok,h,debug);
+[ok coord whiteness] = is_line_all_white(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,k_ok,h,debug_level);
 
 
 
@@ -308,7 +322,7 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [ok coord whiteness] = is_line_all_white(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,k_,h,debug)
+function [ok coord whiteness] = is_line_all_white(img2,dir_tag,kx1_ref,ky1_ref,kx2_ref,ky2_ref,k_,h,debug_level)
 
 white_thr = 0.95;
 
@@ -360,7 +374,7 @@ else
     ok = 0;
 end
 
-if debug
+if (debug_level >= 2)
     figure(h)
     plot(indx(ind_white),indy(ind_white),white_col)
     plot(indx(ind_non_white),indy(ind_non_white),'o-r')
@@ -392,12 +406,10 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function list_filename = download_pgv_images(list_images,url_format)
+function url = download_pgv_images(id_genea,url_format)
 %
-% list_filename = download_pgv_images({'I10396'},'http://ars.altervista.org/PhpGedView/treenav.php?ged=caposele&rootid=<PID>');eval(['!gimp' sprintf(' "%s"',list_filename{:}) ' &'])
+% list_filename = download_pgv_images('I10396','http://ars.altervista.org/PhpGedView/treenav.php?ged=caposele&rootid=<PID>');eval(['!gimp' sprintf(' "%s"',list_filename{:}) ' &'])
 %
-
-dest_folder = 'snapshot';
 
 robot = robot_wrapper('init');
 
@@ -410,49 +422,71 @@ robot_wrapper('mouse_move',{robot,width*0.20, height*0.105});
 robot_wrapper('mouse_click',{robot,'left'});
 pause(0.3)
 
-if ~exist(dest_folder,'dir')
-    mkdir(dest_folder)
-end
+url = strrep(url_format,'<PID>',id_genea);
 
-list_filename = {};
-for i_atl = 1:length(list_images)
-%     id       = data{i_atl,str.ind_id};
-%     name     = data{i_atl,str.ind_name};
-%     % image    = data{i_atl,str.ind_image};
-%     id_genea = data{i_atl,str.ind_id_genea};
-    id_genea = list_images{i_atl};
-    
-    url = strrep(url_format,'<PID>',id_genea);
-    
-    % give focus to the browser url control
-    robot_wrapper('mouse_move',{robot,width*0.20, height*0.105});
+% give focus to the browser url control
+robot_wrapper('mouse_move',{robot,width*0.20, height*0.105});
+robot_wrapper('mouse_click',{robot,'left'});
+pause(0.2)
+robot_wrapper('key_press',{robot,'^(a)'}); % select all
+pause(0.2)
+robot_wrapper('key_press',{robot,url}); % type the url
+pause(0.2)
+robot_wrapper('key_press',{robot,sprintf('\n')}); % enter
+pause(2) % wait for page load
+
+
+% scroll the graph upwards
+robot_wrapper('mouse_move',{robot,width*0.995, height*0.959}); % upwards
+for i_tmp = 1:3
     robot_wrapper('mouse_click',{robot,'left'});
     pause(0.2)
-    robot_wrapper('key_press',{robot,'^(a)'}); % select all
+end
+
+
+% scroll the graph upwards
+tmp_debug_level = 0;
+result_whiteness = get_result_whiteness(tmp_debug_level);
+while ( (result_whiteness(3) == 1) && (result_whiteness(4) < 1) ) % while upper border is still white and it is necessary to move the graph upwards...
+    % ...move the graph upwards
+    robot_wrapper('mouse_move',{robot,width*0.995, height*0.959}); % upwards
+    robot_wrapper('mouse_click',{robot,'left'});
     pause(0.2)
-    robot_wrapper('key_press',{robot,url}); % type the url
+    result_whiteness = get_result_whiteness(tmp_debug_level);
+end
+if (result_whiteness(3)<1)
+    % if upper border is no longer white, step back 1 step
+    robot_wrapper('mouse_move',{robot,width*0.995, height*0.946}); % downwards
+    robot_wrapper('mouse_click',{robot,'left'});
     pause(0.2)
-    robot_wrapper('key_press',{robot,sprintf('\n')}); % enter
-    pause(2) % wait for page load
-    
-    % scroll the window
-    robot_wrapper('mouse_move',{robot,width*0.995, height*0.959});
-    for i_tmp = 1:4
-        robot_wrapper('mouse_click',{robot,'left'});
-        pause(0.2)
-    end
-    
-    % move graph a bit to the right
-    robot_wrapper('mouse_move',{robot,width*0.01, height*0.47})
+end
+
+% move the graph a bit to the right
+%result_whiteness = get_result_whiteness(tmp_debug_level);
+while (result_whiteness(1) < 1) % while left border is not white...
+    % ...move the graph to the right
+    robot_wrapper('mouse_move',{robot,width*0.01, height*0.47});
     pause(0.2)
-    robot_wrapper('mouse_move_with_button_pressed',{robot,'left',width*0.055, height*0.47})
-    
-    
-    %%input('Please position the graph in the middle of the screen, then press ENTER','s')
-    
-    filename = [dest_folder filesep id_genea '.jpg'];
-    robot_wrapper('save_snapshot',{robot,filename});
-    list_filename{end+1} = filename; %#ok<AGROW>
-    
-    fprintf(1,'%6s %s\n',id_genea,url)
+    robot_wrapper('mouse_move_with_button_pressed',{robot,'left',width*0.05, height*0.47});
+    pause(0.1)
+    result_whiteness = get_result_whiteness(tmp_debug_level);
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function result_whiteness = get_result_whiteness(tmp_debug_level)
+
+temp_dwnl = 'temp_img_XYZX$$.jpg';
+img = save_img_snapshot(temp_dwnl);
+[img3 result_whiteness] = crop_img(img,tmp_debug_level);
+delete(temp_dwnl);
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function disp_my(ks,debug_level)
+
+if (debug_level > 0)
+    disp(ks)
 end
