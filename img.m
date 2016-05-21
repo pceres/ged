@@ -1,10 +1,18 @@
-function img
+function img(pgvroot,gedcom,SID)
+%
+% function img(pgvroot,gedcom,SID)
+%
+% % es.:
+% img('http://ars.altervista.org/PhpGedView/','caposele','I0000')
+%
 
-pgvroot = 'http://ars.altervista.org/PhpGedView/';
-gedcom = 'caposele';
-SID = 'I18'; % Alex
-SID = 'I0000'; % io
-%SID = 'I10391'; % padre di Elisa Curcio
+if ~exist('SID','var')
+    pgvroot = 'http://ars.altervista.org/PhpGedView/';
+    gedcom = 'caposele';
+    %SID = 'I18'; % Alex
+    SID = 'I0000'; % io
+    %SID = 'I10391'; % padre di Elisa Curcio
+end
 
 debug_level = 2; % 0: no output; 1: only text msgs; 2: graphs
 
@@ -21,7 +29,8 @@ text0 = urlread(url_pgvtext);
 text = regexp(text0,'<div id="out_nav".*','match'); % only crc the useful part with genealogical data
 text = text{1};
 
-crc_new = round(rand*crc_module)%get_crc(text,crc_module);
+crc_new = round(rand*crc_module);
+%crc_new = get_crc(text,crc_module);
 
 filename = SID2filename(SID);
 if exist(filename,'file')
@@ -173,7 +182,8 @@ width  = size(img,2); % 1920
 x1 = round(width*0.0208); % 40
 y1 = round(height*0.1759);% 190
 x2 = round(width*0.9885); % 1898
-y2 = round(height*0.9296);% 1004
+%y2 = round(height*0.9296);% 1004 needed if the sync message is shown in the lower part of the screen
+y2 = round(height*0.9630);% 1040 needed if no sync message is shown
 
 img2 = img(y1:y2,x1:x2,:);
 
@@ -435,6 +445,9 @@ pause(0.2)
 robot_wrapper('key_press',{robot,sprintf('\n')}); % enter
 pause(2) % wait for page load
 
+%robot_wrapper('key_press',{robot,'(F11)'}); % go fullscreen
+%pause(0.2)
+
 
 % scroll the graph upwards
 robot_wrapper('mouse_move',{robot,width*0.995, height*0.959}); % upwards
@@ -471,6 +484,9 @@ while (result_whiteness(1) < 1) % while left border is not white...
     pause(0.1)
     result_whiteness = get_result_whiteness(tmp_debug_level);
 end
+
+%robot_wrapper('key_press',{robot,'(F11)'}); % exit fullscreen
+%pause(0.2)
 
 
 
