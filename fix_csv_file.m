@@ -31,7 +31,7 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-tag = 'file10_rc_20160413';
+tag = 'file10_rc_20160709';
 work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
 csvfile_dst     = [tag '_.csv'];    % proposed update, read only
@@ -348,6 +348,9 @@ check_parents_sex(table_fix)
 
 % cross-check marriage link
 check_marriage_links(table_fix);
+
+% check skipped ID numbers
+check_skipped_ID_numbers(table_fix);
 
 
 
@@ -1359,6 +1362,32 @@ for i_code = 1:length(list_code)
         fprintf('\t\t%d) %s - ID %s: %s %s %s married to %s %s on %s (--> ID %s, fitness %f)\n',i_match,err_msg,id,nome,nome2,cogn,con_nome,con_cogn,matr_i,id_con,fitness)
     end
 end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function check_skipped_ID_numbers(table_fix)
+% check for skipped (or deleted) ID numbers
+
+ind_v = 3:size(table_fix,1);
+ID_v  = str2double(table_fix(3:size(table_fix,1),1));
+gap_v = diff(str2double(table_fix(2:end,1)));
+
+max_gap = 1;
+ind_gap = find(gap_v>max_gap);
+fprintf(1,'Showing gaps larger than %d records:\n',max_gap)
+for i=1:length(ind_gap)
+    row_i = ind_gap(i);
+    gap_i = gap_v(ind_gap(i),end);
+    id_i  = ID_v(ind_gap(i),end);
+    fprintf(1,'%6d (row %5d): skipped %d ID''s\n',row_i,id_i,gap_i)
+end
+
+figure
+plot(ind_v,gap_v,'.-'),grid on,
+
+figure
+plot(ID_v,gap_v,'.-'),grid on
 
 
 
