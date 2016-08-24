@@ -210,7 +210,7 @@ switch action
                 err_code = 1;
                 err_msg  = 'No connectivity';
             else
-                rethrow(ks_err)
+                rethrow(me)
             end
         end
         
