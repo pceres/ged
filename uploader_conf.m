@@ -23,11 +23,12 @@ switch tag
         % eg.: 'Caposele' --> 'Caposele, Avellino, Campania, ITA'
         result = {
             'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
-            'TEORA'                 , 'Teora, Avellino, Campania, ITA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
+            'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA'
+            'TEORA'                 , 'Teora, Avellino, Campania, ITA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
-            '(F|PH)ILIPPEVILLE'     , 'Philippeville, Skikda, Skikda, DZA';
+            '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'NEWARK'                , 'Newark, Essex, New Jersey, USA';
             'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
             };
