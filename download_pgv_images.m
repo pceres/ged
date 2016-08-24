@@ -195,8 +195,8 @@ url_format = [pgvroot 'treenav.php?ged=' gedcom '&rootid=<PID> '];
 filename_dwnl = [dest_folder temp_folder filesep filename '.bmp']; % use a bitmap format to avoid loss of information
 [img url flg_fullscreen flg_ok] = download_pgv_images_i(SID,url_format,filename_dwnl);
 if flg_ok
+    % crop the image:
     
-    % save fullscreen snapshot and get the image
     disp_my(sprintf('\t%s %s',SID,url),debug_level)
     disp_my(sprintf('\tDownloaded %s',filename_dwnl),debug_level)
     
@@ -570,7 +570,8 @@ ancora = 1;
 count = 0;
 while ancora
     % give focus to the browser
-    robot_wrapper('mouse_move',{robot,width*0.07, height*0.075});
+%    robot_wrapper('mouse_move',{robot,width*0.07, height*0.075}); !!!
+    robot_wrapper('mouse_move',{robot,width*0.07, height*0.100});
     robot_wrapper('mouse_click',{robot,'left'});
     pause(0.3)
     
@@ -681,6 +682,10 @@ end
 if (count==max_scroll)
     fprintf(1,'\tCould not successfully move the graph downwards!')
 end
+
+% remove a possible wrong focus
+robot_wrapper('mouse_move',{robot,pos_mouse_pointer_scroll_down_x-10, pos_mouse_pointer_scroll_down_y-20}); % blank area
+robot_wrapper('mouse_click',{robot,'left'}); % click to remove bad focus, if present
 
 img1 = save_img_snapshot(filename_dwnl);
 
