@@ -570,8 +570,9 @@ ancora = 1;
 count = 0;
 while ancora
     % give focus to the browser
-%    robot_wrapper('mouse_move',{robot,width*0.07, height*0.075}); !!!
-    robot_wrapper('mouse_move',{robot,width*0.07, height*0.100});
+%    robot_wrapper('mouse_move',{robot,width*0.07, height*0.075}); % no menu, no tab
+%    robot_wrapper('mouse_move',{robot,width*0.07, height*0.100}); % no menu, yes tab
+    robot_wrapper('mouse_move',{robot,width*0.07, height*0.130}); % yes menu, yes tab
     robot_wrapper('mouse_click',{robot,'left'});
     pause(0.3)
     
