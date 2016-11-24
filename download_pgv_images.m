@@ -273,7 +273,8 @@ if flg_fullscreen
     y1 = round(height*0.0019);% 2
     x2 = round(width*0.9911); % 1903
     %y2 = round(height*0.9296);% 1004 needed if the sync message is shown in the lower part of the screen
-    y2 = round(height*0.9204);% 994 needed if no sync message is shown
+    %y2 = round(height*0.9204);% 994 needed if no sync message is shown (viewPort=600px)
+    y2 = round(height*0.9981);% 994 needed if no sync message is shown (viewPort=1080px)
 else
     x1 = round(width*0.0208); % 40
     y1 = round(height*0.1759);% 190
@@ -631,7 +632,7 @@ tmp_debug_level = 1;
 result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level);
 count = 0;
 while ( (count<max_scroll) && (result_whiteness(3) == 1) && (result_whiteness(4) < 1) ) % while upper border is still white and it is necessary to move the graph upwards...
-    % ...move the graph upwards
+    % ...move the graph upwards until bottom side is white
     robot_wrapper('mouse_move',{robot,pos_mouse_pointer_scroll_up_x, pos_mouse_pointer_scroll_up_y}); % upwards
     robot_wrapper('mouse_click',{robot,'left'});
     pause(0.2)
@@ -641,7 +642,7 @@ end
 if (count==max_scroll)
     fprintf(1,'\tCould not successfully move the graph upwards!')
 end
-if ( (count>1) && (result_whiteness(3)<1) )
+if ( (count>0) && (result_whiteness(3)<1) )
     % if upper border is no longer white, step back 1 step
     robot_wrapper('mouse_move',{robot,pos_mouse_pointer_scroll_down_x, pos_mouse_pointer_scroll_down_y}); % downwards
     robot_wrapper('mouse_click',{robot,'left'});
