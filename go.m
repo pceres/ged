@@ -97,12 +97,12 @@ if (verbose)
     % grafici
     list={'int_nasc_num','int_matr_num','int_mort_num'};
 
-    analisi.anni = x;
     for i=1:length(list)
         tag=list{i};
         y=liste.(tag);
         x = floor(min(y)/25)*25+1:ceil(max(y)/25)*25; % definisci range x basandosi sugli anni disponibili
         y2=histc(y,x);
+        analisi.anni = x;
 
         analisi.(tag) = y2;
         figure(i)
