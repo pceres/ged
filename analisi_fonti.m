@@ -21,8 +21,10 @@ function result = analisi_fonti(action,params)
 % % change image name format and numbering
 % result = analisi_fonti('reformat_images',{fullpath_and_format,img_fmt_new,start_num})
 % result = analisi_fonti('reformat_images',{'/home/ceres/Desktop/work/genealogia_fonti/Salerno_cellulare/20150818_*.jpg','P*.JPG',8181658})
+% % returns result.matr_rename = {oldfile1,newfile1;oldfile2,newfile2;...}
 %
-% % create num_spaces spaces between two adjacent images
+% % create num_spaces spaces between two adjacent images (fullpath points
+% % to the first image to be shifted)
 % result = analisi_fonti('insert_space',{fullpath,num_spaces})
 % result = analisi_fonti('insert_space',{'/home/ceres/Desktop/work/genealogia_fonti/Salerno_cellulare/P8181659.JPG',2});
 % 
@@ -80,7 +82,9 @@ switch action
         img_fmt_new  = par_struct.img_fmt_new;
         start_num    = par_struct.start_num;
         
-        fcn_reformat_images(img_fullname,img_fmt_new,start_num);
+        matr_rename = fcn_reformat_images(img_fullname,img_fmt_new,start_num);
+        
+        result.matr_rename = matr_rename;
         
     otherwise
         error('Unknown command:%s',action)
@@ -445,7 +449,7 @@ for i_line = 1:length(list_line)
                 image_name      = z{1}{2};
                 params_line = {copertina_type, image_name};
             else
-                z=regexp(line_i,'^indice\s+([0-9]+)\s+([a-zA-Z0-9_]+)','tokens');
+                z=regexp(line_i,'^indice\s+([0-9_]+)\s+([a-zA-Z0-9_]+)','tokens');
                 if ~isempty(z)
                     type_line = 'indice';
                     indice_type = z{1}{1};
@@ -1380,19 +1384,26 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function fcn_reformat_images(img_fullname,img_fmt_new,start_num)
+function matr_rename = fcn_reformat_images(img_fullname,img_fmt_new,start_num)
 
 [img_path img_name img_ext] = fileparts(img_fullname);
 img_fmt = [img_name img_ext];
 
 z = dir([img_path filesep img_fmt]);
 
-for i_img = 1:length(z)
-    img_name_i = z(i_img).name;
-    img_num_new_i = start_num+i_img-1;
-    img_name_new_i = strrep(img_fmt_new,'*',num2str(img_num_new_i));
-    movefile([img_path filesep img_name_i],[img_path filesep img_name_new_i]);
-    fprintf(1,'*** %s --> %s\n',img_name_i,img_name_new_i)
+if ~isempty(z)
+    matr_rename{length(z),2} = [];
+    for i_img = 1:length(z)
+        img_name_i = z(i_img).name;
+        img_num_new_i = start_num+i_img-1;
+        img_name_new_i = strrep(img_fmt_new,'*',num2str(img_num_new_i));
+        matr_rename(i_img,:) = {img_name_i,img_name_new_i};
+        movefile([img_path filesep img_name_i],[img_path filesep img_name_new_i]);
+        fprintf(1,'*** %s --> %s\n',img_name_i,img_name_new_i)
+    end
+else
+    matr_rename = {};
+    fprintf(1,'No file found with format %s!\n',img_fmt)
 end
 
 

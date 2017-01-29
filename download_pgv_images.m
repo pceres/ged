@@ -38,9 +38,7 @@ if ~exist('SID','var')
     % default params for debug
     pgvroot = 'http://localhost/work/PhpGedView/';
     gedcom = 'caposele';
-    %SID = 'I18'; % Alex
-    SID = 'I0000'; % io
-    %SID = 'I10391'; % padre di Elisa Curcio
+    SID = 'I0000';
     dest_folder = pwd;
 elseif iscell(SID)
     % multiple SID list, just iterate on them
@@ -72,7 +70,6 @@ str_SID = load_str_SID(fullname_arc);
 url_pgvtext = [pgvroot 'treenav.php?ged=' gedcom '&rootid=' SID];
 text = urlread(url_pgvtext);
 
-%crc_new = round(rand*crc_module);
 crc_new = get_graph_crc(text,crc_module,pgvroot);
 
 filename = [dest_folder SID2filename(SID)];
