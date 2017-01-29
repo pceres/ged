@@ -22,15 +22,16 @@ switch tag
         % Takes a string, and returns the canonical form of the place, if matching
         % eg.: 'Caposele' --> 'Caposele, Avellino, Campania, ITA'
         result = {
-            'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
+            'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
-            'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA'
-            'TEORA'                 , 'Teora, Avellino, Campania, ITA';
+            'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
+            'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA';
+            'NEWARK'                , 'Newark, Essex, New Jersey, USA';
+            '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
-            '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
-            'NEWARK'                , 'Newark, Essex, New Jersey, USA';
-            'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
+            'UDINE'                 , 'Udine, Udine, Friuli Venezia Giulia, ITA';
+            'TEORA'                 , 'Teora, Avellino, Campania, ITA';
             };
 
     case 'list_conversion_table.pgvu'
