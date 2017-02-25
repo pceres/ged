@@ -27,7 +27,8 @@ function result = ged(action,varargin)
 % result = ged('find_person',struct('pad_nome','lorenzo','cogn','di masi','int_mort_a',[1890 1910 0]),str_archivio,0.25,struct('wsdl_url',wsdl_url,'SID',SID,'class_instance',class_instance)); % try to link the results to the PGV people
 %
 % % record to msg
-% result = ged('record2msg',str_archivio,48856);
+% mode = 'verbose'; % allowed modes: {'oneline','verbose'}
+% result = ged('record2msg',str_archivio,48856,mode);
 %
 % strfielddist
 % val = ged('strfielddist','ANGELO MARIA','ANGIOLO')  --> val [0..1]  0->identical
@@ -168,12 +169,13 @@ switch action
         % return a string describing record with ID id_file
         str_archivio = varargin{1};
         id_file = varargin{2};
+        mode = varargin{3};
         
         archivio = str_archivio.archivio;
         
         ind_record = strmatch(num2str(id_file),archivio(:,str_archivio.indici_arc.id_file),'exact');
         record = archivio(ind_record,:);
-        result = record2msg(record);
+        result = record2msg(record,mode);
         
     case 'determine_sex'
         % determine sex from name ( sex = {'M','F'} )
@@ -188,11 +190,34 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function msg = record2msg(record)
+function msg = record2msg(record,mode)
+% mode:
+%   'oneline': most important fields in one line
+%   'verbose': show all fields
 
 indici = indici_archivio();
 
-msg = sprintf('%s) %s %s %s - b:%s,%s (%s, %s %s) - m:%s,%s (%s %s) - d:%s,%s - note: %s',record{indici.id_file},record{indici.nome},record{indici.nome_2},record{indici.cogn},record{indici.nasc_Nr},record{indici.nasc},record{indici.pad_nome},record{indici.mad_nome},record{indici.mad_cogn},record{indici.matr_Nr},record{indici.matr},record{indici.con_nome},record{indici.con_cogn},record{indici.mort_Nr},record{indici.mort},record{indici.note});
+switch mode
+    case 'oneline'
+        msg = sprintf('%s) %s %s %s - b:%s,%s (%s, %s %s) - m:%s,%s (%s %s) - d:%s,%s - note: %s',record{indici.id_file},record{indici.nome},record{indici.nome_2},record{indici.cogn},record{indici.nasc_Nr},record{indici.nasc},record{indici.pad_nome},record{indici.mad_nome},record{indici.mad_cogn},record{indici.matr_Nr},record{indici.matr},record{indici.con_nome},record{indici.con_cogn},record{indici.mort_Nr},record{indici.mort},record{indici.note});
+    case 'verbose'
+        fields = fieldnames(indici);
+        ks_format = '';
+        for i_record = 1:length(fields)
+            field = fields{i_record};
+            val=record{indici.(field)};
+            vals{i_record}=val; %#ok<AGROW>
+            if ischar(val)
+                fmt_i = '%s';
+            else
+                fmt_i = '%f';
+            end
+            ks_format = [ks_format sprintf('%15s',field) ': ' fmt_i '\n']; %#ok<AGROW>
+        end
+        msg = sprintf(ks_format,vals{:});
+    otherwise
+        error('Unknown format mode "%s"!',mode)
+end
 
 
 
@@ -447,7 +472,7 @@ for ind = 1:num_ok
     somma = result.mask_fit(ind);
     
     record_i = str_archivio.archivio(i_rec,:);
-    ks = record2msg(record_i); % prepare a string with the main info from the record (ID, birth, marriage and death date, etc)
+    ks = record2msg(record_i,'oneline'); % prepare a string with the main info from the record (ID, birth, marriage and death date, etc)
     
     head = sprintf('fit: %f - row: %5d',somma,i_rec);
     msgs = {ks};

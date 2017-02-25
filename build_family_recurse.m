@@ -98,7 +98,7 @@ for i_link = 1:length(list_links)
     
     id_file_0 = full_path(end);
     PID_0 = list_PID_new{i_link};
-    msg_0 = sprintf('%-6s %s',PID_0,ged('record2msg',str_archivio,id_file_0));
+    msg_0 = sprintf('%-6s %s',PID_0,ged('record2msg',str_archivio,id_file_0,'oneline'));
     disp_log(logfile,msg_0)
     for i_hop = (length(full_path)-1):-2:1
         code = full_path(i_hop);
@@ -106,7 +106,7 @@ for i_link = 1:length(list_links)
         
         type = code2type(code);
         PID_i = get_pid_from_network(network,id_file_i);
-        msg_i = sprintf('%-6s %s',PID_i,ged('record2msg',str_archivio,id_file_i));
+        msg_i = sprintf('%-6s %s',PID_i,ged('record2msg',str_archivio,id_file_i,'oneline'));
         
         disp_log(logfile,type)
         disp_log(logfile,msg_i)

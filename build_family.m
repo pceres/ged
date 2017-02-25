@@ -184,7 +184,7 @@ if ( ~isempty(result_i) && ~isempty(sex_ok) )
             % make fitness worse due to wrong sex
             fit_i = min(1,fit_i+0.2);
             mask_fit(i_record) = fit_i;
-            disp(ged('record2msg',str_archivio,ks_id_file))
+            disp(ged('record2msg',str_archivio,ks_id_file,'oneline'))
             fprintf(1,'%s : %s (ID %s) is %s ("%s" should be %s)\n\n',msg,ks_nome,ks_id_file,sex,link_type,sex_ok)
         end
         
@@ -197,7 +197,7 @@ if ( ~isempty(result_i) && ~isempty(sex_ok) )
             fit_i = min(1,fit_i+0.3);
             mask_fit(i_record) = fit_i;
             msg = '***';
-            disp(ged('record2msg',str_archivio,ks_id_file))
+            disp(ged('record2msg',str_archivio,ks_id_file,'oneline'))
             fprintf(1,'%s : %s (ID %s) died at age %d (it should be at least %d)\n\n',msg,ks_nome,ks_id_file,eta_mort,min_age)
         end
     end
