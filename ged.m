@@ -664,7 +664,7 @@ for i=1:length(lista);
         [ok g m a val_num_ok] = get_date_values(ks); % recupera i valori numerici dalla data
         if (~ok)
             numero = str2double(ks);
-            flg_only_year = ~isnan(numero) && (numero>1500) && (numero<2000); % detetc single year date (es. '1798')
+            flg_only_year = ~isnan(numero) && (numero>1700) && (numero<2017); % detetc single year date (es. '1798')
             if (flg_only_year)
                 % data degenere: è presente solo l'anno (es. '1818')
                 fprintf(1,'record id %s - Formato data degenere, con solo anno, senza giorno e mese: %s\n',record{indici.id_file},ks)
@@ -760,8 +760,11 @@ if (~isempty(z))
 
     val_num = (((g-1)/31+m-1)/12+a);
 
+    vect=datevec(now);
+    year_now = vect(1);
+    
     res = datevec(datenum(a,m,g));
-    ok = isequal(res(1:3),[a m g]) && (g >= 1 && g <= 31) && (m >= 1 && m <= 12) && (a >= 1700 && a <= 2010);
+    ok = isequal(res(1:3),[a m g]) && (g >= 1 && g <= 31) && (m >= 1 && m <= 12) && (a >= 1700 && a <= year_now);
 else
     ok = 0;
     g = NaN;
