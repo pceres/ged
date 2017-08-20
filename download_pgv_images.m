@@ -1,4 +1,4 @@
-function fitness_crop = download_pgv_images(pgvroot,gedcom,SID,dest_folder)
+function fitness_crop = download_pgv_images(pgvroot,gedcom,SID,dest_folder,varargin)
 %
 % fitness_crop = download_pgv_images(pgvroot,gedcom,SID,dest_folder)
 %
@@ -44,10 +44,19 @@ elseif iscell(SID)
     % multiple SID list, just iterate on them
     fitness_crop = zeros(size(SID));
     for i_img = 1:length(SID)
-        fitness_crop_i = download_pgv_images(pgvroot,gedcom,SID{i_img},dest_folder);
+        fitness_crop_i = download_pgv_images(pgvroot,gedcom,SID{i_img},dest_folder,  i_img,length(SID));
         fitness_crop(i_img) = fitness_crop_i;
     end
     return
+end
+
+% multiple SID parameters
+if (nargin > 0)
+    i_item   = varargin{1};
+    num_item = varargin{2};
+else
+    i_item   = NaN;
+    num_item = NaN;
 end
 
 
@@ -80,7 +89,7 @@ else
     img_crc_new = NaN;
 end
 
-[flg_rebuild fitness_crop] = needs_rebuild(str_SID,SID,crc_new,img_crc_new,debug_level);
+[flg_rebuild fitness_crop] = needs_rebuild(str_SID,SID,crc_new,img_crc_new,i_item,num_item,debug_level);
 
 filename_out = filename; % rewrite the image
 if flg_rebuild
@@ -132,9 +141,15 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [flg_rebuild fitness_crop_old] = needs_rebuild(str_SID,SID,crc_new,img_crc_new,debug_level)
+function [flg_rebuild fitness_crop_old] = needs_rebuild(str_SID,SID,crc_new,img_crc_new,i_item,num_item,debug_level)
 
-disp_my(sprintf('\n%s :',SID),debug_level)
+if isnan(i_item)
+    msg_item = '';
+else
+    msg_item = sprintf(' (%03d/%03d)',i_item,num_item);
+end
+
+disp_my(sprintf('\n%s%s :',SID,msg_item),debug_level)
 
 if isfield(str_SID,SID)
     crc_old     = str_SID.(SID).crc;
@@ -622,7 +637,9 @@ for i_tmp = 1:3
     pause(0.3)
 end
 
-max_scroll = 10;
+% max number of scroll steps to try to center the image. Once that number
+% is reached, scrolling is stopped
+max_scroll = 20;
 
 % scroll the graph upwards
 tmp_debug_level = 1;
