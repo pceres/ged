@@ -41,11 +41,11 @@ threshold_accept = 0.09; % matches whose fitness is >= this threshold are discar
 % prepare logfile
 logfile = 'logfile_bfr.txt';            % logfile with selected info, displayed by disp_log
 logfile_full = 'logfile_bfr_full.txt';  % logfile with verbose info, saved by diary command
-if exist(logfile,'file')
+if exist([pwd filesep logfile],'file')
     delete(logfile)
 end
 diary off
-if exist(logfile_full,'file')
+if exist([pwd filesep logfile_full],'file')
     delete(logfile_full)
 end
 diary(logfile_full)
