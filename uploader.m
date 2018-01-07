@@ -148,7 +148,7 @@
 % result = uploader('create_individual',{struct('wsdl_url',wsdl_url,'SID',''),str_archivio,id_record,famc,fams});
 %
 % for id_record=[29373 29319],famc='F788';fams={};
-% result = uploader('create_individual',{struct('wsdl_url',wsdl_url,'SID',[]),str_archivio,id_record,famc,fams});  end
+% 1, result = uploader('create_individual',{struct('wsdl_url',wsdl_url,'SID',[]),str_archivio,id_record,famc,fams});  end
 %
 
 
@@ -219,7 +219,8 @@ if (~isfield(soap_struct,'SID') || isempty(soap_struct.SID) )
     soap_struct.class_instance  = class_instance;
     soap_struct.SID             = SID;
 else
-    class_instance  = soap_struct.class_instance;
+    result_init = pgv_init_class(wsdl_url);
+    class_instance  = result_init.class_instance;
     SID             = soap_struct.SID;
 end
 
@@ -231,7 +232,7 @@ end
 PID = getNewXref(class_instance,SID,'INDI'); % PID of individual to be created
 gedcom_txt = prepare_gedcom_str(str_archivio,ind_record,PID,famc,fams);
 
-result_tmp = uploader('create_individual_with_gedcom',{struct('wsdl_url',wsdl_url,'SID',''),gedcom_txt});
+result_tmp = uploader('create_individual_with_gedcom',{struct('wsdl_url',wsdl_url,'SID',SID),gedcom_txt});
 
 % prepare output
 result.err_code     = err_code;
@@ -269,7 +270,8 @@ if (~isfield(soap_struct,'SID') || isempty(soap_struct.SID) )
     soap_struct.class_instance  = class_instance;
     soap_struct.SID             = SID;
 else
-    class_instance  = soap_struct.class_instance;
+    result_init = pgv_init_class(wsdl_url);
+    class_instance  = result_init.class_instance;    
     SID             = soap_struct.SID;
 end
 
@@ -796,7 +798,8 @@ if (~isfield(soap_struct,'SID') || isempty(soap_struct.SID) )
     soap_struct.class_instance  = class_instance;
     soap_struct.SID             = SID;
 else
-    class_instance  = soap_struct.class_instance;
+    result_init = pgv_init_class(wsdl_url);
+    class_instance  = result_init.class_instance;    
     SID             = soap_struct.SID;
 end
 
@@ -1109,7 +1112,18 @@ result.list_changes = list_changes;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function result_init = pgv_init_class(wsdl_url)
+
+flg_force = 1; % force the reload of the wsdl
+result_init = PhpGedViewSoapInterface('init_class',{wsdl_url,flg_force});
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [class_instance, SID] = pgv_authenticate(wsdl_url)
+
+% the auth request should be issued only once per session: issuing a
+% second auth request ctually logs the user out
 
 pgv_username = uploader_conf('pgv_username'); % username used for authentication on the pgv site
 pgv_password = uploader_conf('pgv_password'); % password used for authentication on the pgv site
@@ -1118,14 +1132,24 @@ pgv_gedcom   = uploader_conf('pgv_gedcom');   % name of the gedcom to update on 
 flg_err = 1;
 
 % detect SOAP wsdl
-flg_force = 1; % force the reload of the wsdl
-result_init = PhpGedViewSoapInterface('init_class',{wsdl_url,flg_force});
+result_init = pgv_init_class(wsdl_url);
 if (result_init.err_code == 0)
     class_instance = result_init.class_instance;
     display(result_init.class_instance)
 
     % authenticate
     result_auth = PhpGedViewSoapInterface('Authenticate',{class_instance,pgv_username,pgv_password,pgv_gedcom,'none','GEDCOM'});
+    
+    try
+        PhpGedViewSoapInterface('getXref',{class_instance,result_auth.SID,'first','INDI'}); % dummy request to check if server answers correctly
+    catch %#ok<CTCH>
+        % there was an error. This could be the case when an auth request
+        % was issued when login had already been done. This second request
+        % actually logout the user, so the subsequent request to the server
+        % fails. It is necessary a new auth request, that follows here:
+        result_auth = PhpGedViewSoapInterface('Authenticate',{class_instance,pgv_username,pgv_password,pgv_gedcom,'none','GEDCOM'});
+    end
+    
     if (result_auth.err_code == 0)
         SID         = result_auth.SID;
         flg_err     = 0; % once here, no errors eccurred
