@@ -216,7 +216,7 @@ for i_blk = 1:length(ind)
             y1 = 0.01+offset;
             y2 = 0.3+offset;
 
-            ind_col = round(i_blk*2/(length(ind)*2)*size(col,1));
+            ind_col = ceil(i_blk*2/(length(ind)*2)*size(col,1));
             h=patch([x1 x2 x2 x1],[y1 y1 y2 y2],col(ind_col,:));
             set(h,'FaceAlpha',0.3,'EdgeAlpha',0)
         end
