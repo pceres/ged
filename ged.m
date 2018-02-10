@@ -1522,6 +1522,7 @@ if isempty(regexp(ks_givn,pattern_undefined, 'once'))
                     'JUDITH$'
                     'L(I|EO)NOR$' % ELINOR
                     '^LILLIAN$'
+                    'LIZABETH$' % ELIZABETH
                     };
                 for i_pat=1:length(list_e_female)
                     pat = list_e_female{i_pat};

@@ -557,21 +557,21 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ks_date = merge_multiple_dates(matr_date,ks_id)
+function ks_date = merge_multiple_dates(matr_date,ks_date_header,ks_id)
 % merge multiple columns into one, according the rules:
-%   - empty if no marriage available;
-%   - the only date possible, if only one is available;
+%   - empty if no date available;
+%   - the only possible date, if only one is available;
 %   - the date more in the left in input matrix, if multiple are available.
 
 ks_date = matr_date(:,1);
 
 num_col = size(matr_date,2);
 if ( num_col>1 )
-    
-    fprintf(1,'\nMerging multiple (%d) date columns into one:\n',num_col)
-    fprintf(1,'\t- empty if no marriage available;\n')
-    fprintf(1,'\t- the only date possible, if only one is available among civil and religious;\n')
-    fprintf(1,'\t- the civil marriage date, if both are available.\n')
+    ks=sprintf('%s,',ks_date_header{:});ks=ks(1:end-1);
+    fprintf(1,'\nMerging multiple (%s) date columns into one:\n',ks)
+    fprintf(1,'\t- empty if no date available;\n')
+    fprintf(1,'\t- the only date possible, if only one is available among "%s" and "%s";\n',ks_date_header{:})
+    fprintf(1,'\t- "%s" date, if both are available.\n',ks_date_header{1})
     
     max_delta = 90; % [giorni]
     for i=1:size(matr_date,1)
@@ -587,9 +587,12 @@ if ( num_col>1 )
                 if ( ~isempty(regexp(vett_ks{1},'[0-9]{2,2}/[0-9]{2,2}/[0-9]{4,4}', 'once')) && ~isempty(regexp(vett_ks{2},'[0-9]{2,2}/[0-9]{2,2}/[0-9]{4,4}', 'once')) )
                     vett_num = datenum(vett_ks,'dd/mm/yyyy');
                 else
-                    disp(vett_ks)
-                    fprintf(1,'Not all dates are in the dd/mm/yyyy format! (ID %s)\n',id_i)
-                    pause
+                    flg_only_years_for_both = isequal(vett_ks{1},vett_ks{2}) && regexp(vett_ks{1},'^1[0-9]{3,3}$'); % only year is available in both fields
+                    if ~flg_only_years_for_both
+                        disp(vett_ks)
+                        fprintf(1,'Not all dates are in the dd/mm/yyyy format! (ID %s)\n',id_i)
+                        pause
+                    end
                     continue
                 end
                 delta = max(abs(diff(vett_num)));
@@ -620,9 +623,9 @@ if ( num_col>1 )
                 end
             end
         else
-            % missing civil date
+            % missing main (first) date
             ks_date{i} = vett_ks{2};
-            %fprintf(1,'\tOnly religious date: %s\n',vett_ks{2})
+            %fprintf(1,'\tOnly secondary date: %s\n',vett_ks{2})
         end
     end
 end
@@ -636,10 +639,10 @@ function lines_fix = rework_fix_file_7(str_fix,lines_fix,table_fix,lines_src) %#
 ind_giorno_nascita = strmatch('Giorno nascita',table_fix(1,1:end));
 
 % {[date,day,month,year,num_date],caption}
-matr_ind = ...
-    { 7          ind_giorno_nascita+0+(0:3)   'nascita';
+matr_ind = {...
+    7          ind_giorno_nascita+0+(0:3)   'nascita';
     [23 40]    ind_giorno_nascita+4+(0:3)   'matrimonio';
-    35         ind_giorno_nascita+8+(0:3)   'morte';
+    [35 44]    ind_giorno_nascita+8+(0:3)   'morte';
     };
 
 flg_fixed = 0;
@@ -663,11 +666,13 @@ for i_event=1:size(matr_ind,1)
     ks_year     = table_fix(ind_any,ind_year);
     ks_datenum  = table_fix(ind_any,ind_datenum); %#ok<NASGU>
     
+    ks_date_header = table_fix(1,ind_date);
+    
     % merge multiple columns into one, according the rules:
     %   - empty if no marriage available
     %   - the only date possible, if only one is available among civil and religious;
     %   - the civil marriage date, if both are available
-    ks_date = merge_multiple_dates(ks_date,ks_id);
+    ks_date = merge_multiple_dates(ks_date,ks_date_header,ks_id);
     
     for i=1:length(ind_any)
         ind_i = ind_any(i);
@@ -691,11 +696,12 @@ for i_event=1:size(matr_ind,1)
             ks_dates = ['ID ' sprintf('%5s',ks_id_i) ': "' ks_date_i,'" <--> "',ks_day_i '/' ks_month_i '/' ks_year_i '"'];
             
             if regexp(ks_date_i,'^1[6789][0-9][0-9]$')
+                % incomplete date format, only year
                 
+                % check only the year
                 if ( ~isempty(ks_year_i) && ~strcmp(ks_year_i,num2str(ks_date_i)) )
                     error('Year mismatch for record %s: (%s,%s)!',ks_id_i,ks_year_i,num2str(ks_date_i))
                 end
-                fprintf(1,'\tIncomplete date format, only year: %s\n',ks_dates)
                 
             elseif isequal(ks_date2,'00/00/')
                 % detect dates with sure days\months (where month and days
