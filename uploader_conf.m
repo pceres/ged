@@ -27,6 +27,7 @@ switch tag
             'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
             'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA';
             'NEWARK'                , 'Newark, Essex, New Jersey, USA';
+            'NEW YORK'              , 'New York, New York, New York, USA';
             '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';

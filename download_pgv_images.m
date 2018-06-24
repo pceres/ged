@@ -73,6 +73,9 @@ filename_arc = 'archivio_img_crc.mat';
 % code
 %
 
+% retrieve graph for SID (warning: session-less operation, so recent people
+% are hidden (shown as "private"), and a change of their names is not
+% detected
 str_pgv_img = struct('pgvroot',pgvroot,'gedcom',gedcom,'SID',SID);
 fullname_arc = [dest_folder filesep filename_arc];
 str_SID = load_str_SID(fullname_arc);

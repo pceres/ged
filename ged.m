@@ -216,7 +216,7 @@ switch mode
         end
         msg = sprintf(ks_format,vals{:});
     otherwise
-        error('Unknown format mode "%s"!',mode)
+        error('Unknown format mode "%s"! Allowed modes are: {''oneline'',''verbose''}',mode)
 end
 
 
