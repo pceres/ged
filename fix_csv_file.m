@@ -11,8 +11,7 @@ function fix_csv_file(fix_type,enable_write)
 %   5 : *** increment one out of 2 duplicated id's in dst file
 %   6 : reset dd/mm/yyyy to original yyyy when needed
 %   7 : crosscheck date with single month and day columns
-%   8 : *** move marriage date in 1748-1809 range into "Data di
-%           matrimonio religioso" column
+%   8 : *** move marriage date in 1748-1809 range into "Data di matrimonio religioso" column
 %
 % enable_write: [0,1] 1-> enable writing dst file if fixed
 %
@@ -31,7 +30,7 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-tag = 'file10_rc_20170114';
+tag = 'file10_rc_20180727';
 work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
 csvfile_dst     = [tag '_.csv'];    % proposed update, read only
@@ -195,9 +194,14 @@ for i_bad=1:length(list_bad)
     good_text = z{1}{1}; % good initial text before bad text, without ending ; (es. ";M;" or ";G;")
     
     ind_src_ok = strmatch(good_text,lines_src); % same row, but ok!
-    if isempty(ind_src_ok) || (length(ind_src_ok)>1)
+    if (length(ind_src_ok)~=1)
+        if (isempty(ind_src_ok))
+            msg = sprintf('No match! (line: %s)',good_text);
+        else
+            msg = sprintf('Too many matches! (line: %s)',good_text);
+        end
         disp(ind_src_ok)
-        disp('No or too many matches!')
+        disp(msg)
         pause
     end
     %ks_ok = lines_src{ind_src_ok};
@@ -457,6 +461,7 @@ function lines_fix = rework_fix_file_6(str_fix,lines_fix,table_fix,lines_src) %#
 
 fmt_ok = '^[0-9]{4}$';
 col_max = 39; % last column to be fixed
+col_id = 1; % position of ID column
 
 table_src = lines_to_table(lines_src);
 
@@ -467,12 +472,20 @@ for i_line = 1:length(ind)
     ind_src = ind(i_line);
     record_src = table_src(ind_src,:);
     
+    ID_src = table_src{ind_src,col_id};
+    
     ks = sprintf('%s;',record_src{2:6});ks=ks(1:end-1);
     
     ind_fix = find(~cellfun('isempty',regexp(lines_fix,ks)));
     record_fix = table_fix(ind_fix,:);
     if isempty(ind_fix)
-        fprintf(1,'No match found in src file, line %d: %s\n',ind_src,ks)
+        if isempty(strmatch(ID_src,table_fix(:,col_id),'exact'))
+            msg_deleted = ', deleted';
+        else
+            msg_deleted = ', still existing';
+        end
+            
+        fprintf(1,'No match found in src file, line %d (ID %s%s): %s\n',ind_src,ID_src,msg_deleted,ks)
         pause
         continue
     elseif (length(ind_fix)>1)
@@ -492,7 +505,10 @@ for i_line = 1:length(ind)
             record_fix = record_fix(ind_best,:);
             fprintf(1,'\t...but found a good match, proceeding with id %s\n',record_fix{1})
         else
-            disp([record_src(:,1:col_max);record_fix(:,1:col_max)])
+            disp('src:')
+            disp(record_src(:,1:col_max))
+            disp('fix:')
+            disp(record_fix(:,1:col_max))
             continue
         end
     end
@@ -1033,7 +1049,10 @@ for i_check = 1:size(ind_check,1)
     links       = matr_record{2};
     for i_link = 1:length(links)
         link = links{i_link};
-        ind_link = strmatch({link},matr_link(:,1));
+        ind_link = strmatch({link},matr_link(:,1),'exact');
+        if ( length(ind_link)>1 )
+            fprintf(1,'***\n*** ERROR! Duplicated ID %s (%d occurrencies)!\n***\n\n',link,length(ind_link))
+        end
         msg_out = '';
         msg_type = 0;
         if isempty(ind_link)
@@ -1043,8 +1062,8 @@ for i_check = 1:size(ind_check,1)
             msg_type = 4;
             msg_out = sprintf('Id %s links to itself!',id);
         else
-            id_links = matr_link{ind_link,2};   % id of link destination
-            ind_table   = matr_link{ind_link,3};% pos in table_fix of link destination
+            id_links = matr_link{ind_link,2};   % id of destination link
+            ind_table   = matr_link{ind_link,3};% pos in table_fix of destination link
             if ~ismember(id,id_links)
                 if isempty(id_links)
                     msg_type = 2;
@@ -1078,6 +1097,10 @@ for i_check = 1:size(ind_check,1)
                 case 1
                     link_type = 1;
                     msg_match = '*** NO GOOD MATCH!';
+                    
+                    if ( isempty(strmatch(link,table_fix(:,1),'exact')) )
+                        msg_match = sprintf('%s (ID %s no longer exists!)',msg_match,link);
+                    end
                     
                 case 2
                     link_type = 2;
@@ -1151,6 +1174,7 @@ col_con_nome = strmatch('Nomeconiuge',header,'exact');
 col_con_cogn = strmatch('Cognomeconiuge',header,'exact');
 
 disp(' ');disp('Checking marriage links')
+disp('press ENTER to start'),pause
 
 ind_not_empty = find(~cellfun('isempty',table_fix(2:end,col)))+1; % all non empty lines, discarding header
 
@@ -1295,6 +1319,8 @@ fprintf(1,'\n\n\n%%**************************\n%%*** Prepare Matlab commands to 
 diary off
 try delete('marriage_link_analysis.m');catch;end %#ok<CTCH>
 diary('marriage_link_analysis.m')
+
+fprintf(1,'\n\ndiary off; diary(''marriage_link_analysis_log.txt'');\n\n')
 for i_code = 1:3
     switch i_code
         case 1
@@ -1337,6 +1363,8 @@ for i_code = 1:3
         disp(cmd)
     end
 end
+fprintf(1,'\n\ndiary off\n\n')
+
 diary off
 edit('marriage_link_analysis.m')
 
@@ -1379,21 +1407,23 @@ ind_v = 3:size(table_fix,1);
 ID_v  = str2double(table_fix(3:size(table_fix,1),1));
 gap_v = diff(str2double(table_fix(2:end,1)));
 
-max_gap = 1;
+max_gap = 6;
 ind_gap = find(gap_v>max_gap);
 fprintf(1,'Showing gaps larger than %d records:\n',max_gap)
 for i=1:length(ind_gap)
     row_i = ind_gap(i);
     gap_i = gap_v(ind_gap(i),end);
     id_i  = ID_v(ind_gap(i),end);
-    fprintf(1,'%6d (row %5d): skipped %d ID''s\n',row_i,id_i,gap_i)
+    fprintf(1,'%6d: skipped %d ID''s before ID %5d\n',row_i,gap_i,id_i)
 end
 
 figure
 plot(ind_v,gap_v,'.-'),grid on,
+xlabel('row'),ylabel('delta with respect to previous ID'),title('Gap analysis')
 
 figure
 plot(ID_v,gap_v,'.-'),grid on
+xlabel('ID'),ylabel('delta with respect to previous ID'),title('Gap analysis')
 
 
 
