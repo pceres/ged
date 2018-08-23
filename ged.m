@@ -720,7 +720,7 @@ for i=1:length(lista);
         if ( ((val_g ~= g) && ~isnan(val_g)) || ((val_m ~= m) && ~isnan(val_m)) || ((val_a ~= a) && (~isnan(val_a))) || ...
            ((abs(val_num-val_num_ok)>1e-4) && ~isnan(val_num)) )
 
-            item.msgs = {sprintf('err.%d: giorno-mese-anno (%02d-%02d-%d) non coerenti con la data nel campo %s: %s (%.4f)',err_code,val_g,val_m,val_a,tag,ks,val_num_ok)};
+            item.msgs = {sprintf('err.%d: giorno-mese-anno (%02d-%02d-%d->%.4f) non coerenti con la data nel campo %s: %s (%.4f)',err_code,val_g,val_m,val_a,val_num,tag,ks,val_num_ok)};
             items{end+1} = item;
 
             changed = 1;
