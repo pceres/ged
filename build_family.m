@@ -516,18 +516,20 @@ family_info.self_sex = self_sex;
 switch search_type
     case 'frat'
         % search for brothers
-        struct_search = struct('pad_nome',pad_nome,'cogn',cogn,'mad_nome',mad_nome,'mad_cogn',mad_cogn);
+        struct_search = struct('cogn',cogn,'mad_cogn',mad_cogn,'pad_nome',pad_nome,'mad_nome',mad_nome);
         
         % determine range of birth year of brothers based on
         % birth year of self
         if isnumeric(int_nasc_a)
             rng_nasc_brother = int_nasc_a+(params.max_age_to_have_a_child-params.min_age_to_have_a_child)*[-1 1];
-            struct_search.int_nasc_a = [rng_nasc_brother 0]; % add a 0 tolerance factor to prevent years outside range
+            struct_search = add_field(struct_search,'int_nasc_a',[rng_nasc_brother 0]);  % add a 0 tolerance factor to prevent years outside range
+            %struct_search.int_nasc_a = [rng_nasc_brother 0]; % add a 0 tolerance factor to prevent years outside range
+            %numfields=length(fieldnames(struct_search));struct_search = orderfields(struct_search,[numfields 1:(numfields-1)]); % move last field as first, for performance improvement
         end
         
     case 'pad'
         % search for father
-        struct_search = struct('nome',pad_nome,'cogn',cogn,'con_nome',mad_nome,'con_cogn',mad_cogn);
+        struct_search = struct('cogn',cogn,'con_cogn',mad_cogn,'con_nome',mad_nome,'nome',pad_nome);
         
         % filter based on birth years of the first and last brother
         records_frat = str_archivio.archivio(result_current.result_frat.mask_id,:);
@@ -560,7 +562,9 @@ switch search_type
                     rng_nasc_parent = NaN;
                 end
             else
-                struct_search.int_nasc_a = [rng_nasc_parent 0]; % add a 0 tolerance factor to prevent years outside range
+                struct_search = add_field(struct_search,'int_nasc_a',[rng_nasc_parent 0]);  % add a 0 tolerance factor to prevent years outside range
+                %struct_search.int_nasc_a = [rng_nasc_parent 0]; % add a 0 tolerance factor to prevent years outside range
+                %numfields=length(fieldnames(struct_search));struct_search = orderfields(struct_search,[numfields 1:(numfields-1)]); % move last field as first, for performance improvement
             end
         else
             rng_nasc_parent = NaN;
@@ -570,13 +574,15 @@ switch search_type
         
     case 'mad'
         % search for mother
-        struct_search = struct('nome',mad_nome,'cogn',mad_cogn,'con_nome',pad_nome,'con_cogn',cogn);
+        struct_search = struct('cogn',mad_cogn,'con_cogn',cogn,'con_nome',pad_nome,'nome',mad_nome);
 
         % filtro basato su anni di nascita del primo ed ultimo fratello
         rng_nasc_parent = family_info.rng_nasc_parent;
         
         if ~isnan(rng_nasc_parent)
-            struct_search.int_nasc_a = [rng_nasc_parent 0]; % add a 0 tolerance factor to prevent years outside range
+            struct_search = add_field(struct_search,'int_nasc_a',[rng_nasc_parent 0]);  % add a 0 tolerance factor to prevent years outside range
+            %struct_search.int_nasc_a = [rng_nasc_parent 0]; % add a 0 tolerance factor to prevent years outside range
+            %numfields=length(fieldnames(struct_search));struct_search = orderfields(struct_search,[numfields 1:(numfields-1)]); % move last field as first, for performance improvement
         end
         
     case 'figl'
@@ -586,11 +592,11 @@ switch search_type
             con_cogn_i = con_cogn{i_con};
             switch self_sex
                 case 'M'
-                    struct_search_i = struct('pad_nome',nome,'cogn',cogn,'mad_nome',con_nome_i,'mad_cogn',con_cogn_i);
+                    struct_search_i = struct('cogn',cogn,'mad_cogn',con_cogn_i,'pad_nome',nome,'mad_nome',con_nome_i);
                 case 'F'
-                    struct_search_i = struct('pad_nome',con_nome_i,'cogn',con_cogn_i,'mad_nome',nome,'mad_cogn',cogn);
+                    struct_search_i = struct('cogn',con_cogn_i,'mad_cogn',cogn,'pad_nome',con_nome_i,'mad_nome',nome);
                 otherwise
-                    struct_search_i = struct('pad_nome',nome,'cogn',cogn,'mad_nome',con_nome_i,'mad_cogn',con_cogn_i);                  
+                    struct_search_i = struct('cogn',cogn,'mad_cogn',con_cogn_i,'pad_nome',nome,'mad_nome',con_nome_i);                  
                     fprintf(1,'**** Unmanaged sex "%s" for name "%s", supposing male sex!\n',self_sex,nome)
             end
             
@@ -606,7 +612,9 @@ switch search_type
                     struct_search = struct([]);
                     return
                 else
-                    struct_search_i.int_nasc_a = [rng 0]; % add a 0 tolerance factor to prevent years outside range
+                    struct_search_i = add_field(struct_search_i,'int_nasc_a',[rng 0]);  % add a 0 tolerance factor to prevent years outside range
+                    %struct_search_i.int_nasc_a = [rng 0]; % add a 0 tolerance factor to prevent years outside range
+                    %numfields=length(fieldnames(struct_search_i));struct_search_i = orderfields(struct_search_i,[numfields 1:(numfields-1)]); % move last field as first, for performance improvement
                 end
             end
             
@@ -637,14 +645,16 @@ switch search_type
             mad_nome = record_self{indici_arc.mad_nome};
             mad_cogn = record_self{indici_arc.mad_cogn};
             
-            struct_search = struct('nome',con_nome,'cogn',con_cogn,'con_nome',nome,'con_cogn',cogn, ...
+            struct_search = struct('cogn',con_cogn,'con_cogn',cogn,'con_nome',nome,'nome',con_nome, ...
                 'pad_nome',con_pad_nome, ...
                 'con_pad_nome',pad_nome,'con_mad_nome',mad_nome,'con_mad_cogn',mad_cogn ...
             );
 
             if (~isnan(int_nasc_a))
                 int_nasc_a_con = int_nasc_a+[params.con_nasc_min_delta params.con_nasc_max_delta]; % restringi la data di nascita del coniuge
-                struct_search.int_nasc_a = [int_nasc_a_con 0]; % add a 0 tolerance factor to prevent years outside range
+                struct_search = add_field(struct_search,'int_nasc_a',[int_nasc_a_con 0]);  % add a 0 tolerance factor to prevent years outside range
+                %struct_search.int_nasc_a = [int_nasc_a_con 0]; % add a 0 tolerance factor to prevent years outside range
+                %numfields=length(fieldnames(struct_search));struct_search = orderfields(struct_search,[numfields 1:(numfields-1)]); % move last field as first, for performance improvement
             end
         end
         
@@ -668,7 +678,7 @@ switch search_type
             frat_con_cogn = record_frat_i{indici_arc.con_cogn}; % cognome coniuge del fratello
 
             if ~isempty(frat_con_cogn)
-                struct_search_cgnt = struct('nome',frat_con_nome,'cogn',frat_con_cogn,'con_nome',frat_nome,'con_cogn',frat_cogn);
+                struct_search_cgnt = struct('cogn',frat_con_cogn,'con_cogn',frat_cogn,'con_nome',frat_nome,'nome',frat_con_nome);
 %                 if (~isnan(int_nasc_a))
 %                     int_nasc_a_cogn = int_nasc_a+[params.con_nasc_min_delta params.con_nasc_max_delta]; % restringi la data di nascita del coniuge
 %                     struct_search.int_nasc_a = [int_nasc_a_cogn 0]; % add a 0 tolerance factor to prevent years outside range
@@ -693,6 +703,17 @@ catch me
     disp(struct_search)
     disp('*******  TODO: error cleaning struct_search!\n%s',me.message)
 end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function out_struct = add_field(in_struct,fieldname,fieldvalue)
+
+out_struct = in_struct;
+out_struct.(fieldname) = fieldvalue;
+numfields=length(fieldnames(out_struct));
+out_struct = orderfields(out_struct,[numfields 1:(numfields-1)]); % move last field as first, for performance improvement
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
