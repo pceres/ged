@@ -874,6 +874,11 @@ for i_record = 1:size(list_records,1) % for each record to be searched on PGV si
             list_found_i = [list_found{i_record} list_persons];
             list_found{i_record} = list_found_i; %#ok<AGROW>
             list_persons_all = [list_persons_all list_persons]; %#ok<AGROW>
+            
+            if ~isempty(list_persons)
+                % found one match, stop here
+                break
+            end
         end
     end
     
@@ -2826,9 +2831,9 @@ list_query1 = {};
 
 % first name
 name_str = sprintf('%s %s',str_search.nome,str_search.cogn); % es. 'CARMINA CERES'
-name_str = strrep(name_str,' ','%'); % es. 'CARMINA%CERES' add "%" sql wildcard to allow in sql query a match with nicknames (es. 'CARMINA "SOPRANNOME" CERES')
 query_name = ['NAME=' name_str]; % Keywords: NAME, BIRTHDATE, DEATHDATE, BIRTHPLACE, DEATHPLACE, GENDER
 list_query1 = [list_query1 {query_name}];
+
 if ~isempty(str_search.nome_2)
     % second name
     query_name = sprintf('NAME=%s %s %s',str_search.nome,str_search.nome_2,str_search.cogn); % Keywords: NAME, BIRTHDATE, DEATHDATE, BIRTHPLACE, DEATHPLACE, GENDER
@@ -2840,17 +2845,17 @@ list_query2 = {''};
 
 % only birth date
 if ~isnan(str_search.int_nasc_a)
-    query_ext = sprintf('&BIRTHDATE=%d',str_search.int_nasc_a);
+    query_ext = sprintf(' & BIRTHDATE=%d',str_search.int_nasc_a);
     list_query2 = [list_query2 {query_ext}];
 end
 % only death date
 if ~isnan(str_search.int_mort_a)
-    query_ext = sprintf('&DEATHDATE=%d',str_search.int_mort_a);
+    query_ext = sprintf(' & DEATHDATE=%d',str_search.int_mort_a);
     list_query2 = [list_query2 {query_ext}];
 end
 % both birth and death date
 if (~isnan(str_search.int_nasc_a) && ~isnan(str_search.int_mort_a))
-    query_ext = sprintf('&BIRTHDATE=%d&DEATHDATE=%d',str_search.int_nasc_a,str_search.int_mort_a);
+    query_ext = sprintf(' & BIRTHDATE=%d & DEATHDATE=%d',str_search.int_nasc_a,str_search.int_mort_a);
     list_query2 = [list_query2 {query_ext}];
 end
 
@@ -2863,6 +2868,32 @@ for i2=1:length(list_query2)
     end
 end
 list_query = fliplr(list_query); % from most specific to less specific
+
+
+% add full birth date on top (if the date is in the canonical format)
+if (~isempty(str_search.nasc) && (sum(str_search.nasc=='/')==2) )
+    query_add = sprintf('BIRTHDATE=%s',create_gedcom_date(str_search.nasc)); % only name (surname could be slightly different)
+    list_query = [{query_add} list_query];
+    
+    % % checks on single name and surname could be very slow
+    %     query_add = sprintf('NAME=%s & BIRTHDATE=%s',str_search.nome,create_gedcom_date(str_search.nasc)); % only name (surname could be slightly different)
+    %     list_query = [{query_add} list_query];
+    %
+    %     query_add = sprintf('NAME=%s & BIRTHDATE=%s',str_search.cogn,create_gedcom_date(str_search.nasc)); % only surname (name could be slightly different)
+    %     list_query = [{query_add} list_query];
+end
+
+
+% remove queries with a single name or surname (to avoid too many matches)
+list_query = list_query(~cellfun(@isempty,regexp(list_query,'[\s&]')));
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function gedcom_date = create_gedcom_date(ks_date)
+% '13/02/1797' --> '13 Feb 1797'
+
+gedcom_date = upper(datestr(datenum(ks_date,'dd/mm/yyyy'),'dd mmm yyyy'));
 
 
 
@@ -2993,6 +3024,7 @@ ks_death_date_i = p.deathDate;
 [flg_incompatible_death fitness_death] = check_date_incompatibility(str_search,'mort',ks_death_date_i,debug);
 
 if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<=fitness_thr_dates) || (fitness_death<=fitness_thr_dates) ) )
+    % if dates are not clearly incompatible, try to analyze parent's names
     fitness0 = min([fitness_birth fitness_death]);
 
     % check parents
@@ -3005,7 +3037,8 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
         val_mad_nome = ged('strfielddist',str_search.mad_nome,result_F.mad_nome_to_be_checked); % string distance
         val_mad_cogn = ged('strfielddist',str_search.mad_cogn,result_F.mad_cogn_to_be_checked); % string distance
         
-        fitness = fitness0*mean([val_pad_nome val_mad_nome val_mad_cogn]);
+        %fitness = fitness0*mean([val_pad_nome val_mad_nome val_mad_cogn]); % Formula too favorable: if date is quite close, alos a very bad fitness on parent's names can't decrease enough final fitness, and false matches are possible
+        fitness = fitness0+max(0,mean([val_pad_nome val_mad_nome val_mad_cogn]-fitness_thr));
         
         ks_parents = sprintf('di %s (%.2f) e %s (%.2f) %s (%.2f) -> %f',result_F.pad_nome_to_be_checked,val_pad_nome,result_F.mad_nome_to_be_checked,val_mad_nome,result_F.mad_cogn_to_be_checked,val_mad_cogn,fitness0);
     end
