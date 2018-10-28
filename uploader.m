@@ -2576,6 +2576,13 @@ else % else if an integer is passed, try to find the right number of zeros in th
     end
 end
 
+% prepare output
+if ( (class_char=='F') && ~iscell(result.result_out.CHILDREN) )
+    % force CHILDREN field to be always a cell array (for a single
+    % child, it would be a string)
+    result.result_out.CHILDREN = {result.result_out.CHILDREN};
+end
+
 if flg_must_archive % store in the cache for later use
     archive.(list_id){i_pgv+1} = XID; % +1 because one-based
     archive.list_obj.(XID) = result;
@@ -3033,12 +3040,19 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
     if result_F.err_code
         error(result_F.err_msg)
     else
-        val_pad_nome = ged('strfielddist',str_search.pad_nome,result_F.pad_nome_to_be_checked); % string distance
-        val_mad_nome = ged('strfielddist',str_search.mad_nome,result_F.mad_nome_to_be_checked); % string distance
-        val_mad_cogn = ged('strfielddist',str_search.mad_cogn,result_F.mad_cogn_to_be_checked); % string distance
+        vett_parent_fit = [];
+        if ~isempty(result_F.pad_nome_to_be_checked)
+            vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.pad_nome,result_F.pad_nome_to_be_checked)]; % string distance
+        end
+        if ~isempty(result_F.mad_nome_to_be_checked)
+            vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.mad_nome,result_F.mad_nome_to_be_checked)]; % string distance
+        end
+        if ~isempty(result_F.mad_cogn_to_be_checked)
+            vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.mad_cogn,result_F.mad_cogn_to_be_checked)]; % string distance
+        end
         
         %fitness = fitness0*mean([val_pad_nome val_mad_nome val_mad_cogn]); % Formula too favorable: if date is quite close, alos a very bad fitness on parent's names can't decrease enough final fitness, and false matches are possible
-        fitness = fitness0+max(0,mean([val_pad_nome val_mad_nome val_mad_cogn]-fitness_thr));
+        fitness = fitness0+max(0,mean(vett_parent_fit-fitness_thr));
         
         ks_parents = sprintf('di %s (%.2f) e %s (%.2f) %s (%.2f) -> %f',result_F.pad_nome_to_be_checked,val_pad_nome,result_F.mad_nome_to_be_checked,val_mad_nome,result_F.mad_cogn_to_be_checked,val_mad_cogn,fitness0);
     end
@@ -3132,7 +3146,7 @@ if ( iscell(i_pgv) && (length(i_pgv)>1) )
     [result_P, archive] = getXxxxById(archive,PID,class_instance,SID,'getPersonByID');
     result_P = result_P.result_out;
     ks=num2str(1:length(i_pgv),'%d,');
-    ks0=sprintf('%s\nWhich is the biologic parental family for %s (%s)? [%s]',ks0,result_P.gedcomName,PID,ks(1:end-1));
+    ks0=sprintf('%s\n*** This should be fixed manually in the online tree!\nAnyway, to proceed, which is the biological parental family for %s (%s)? [%s]',ks0,result_P.gedcomName,PID,ks(1:end-1));
     
     ancora = 1;
     while ancora
