@@ -3032,7 +3032,7 @@ ks_death_date_i = p.deathDate;
 
 if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<=fitness_thr_dates) || (fitness_death<=fitness_thr_dates) ) )
     % if dates are not clearly incompatible, try to analyze parent's names
-    fitness0 = min([fitness_birth fitness_death]);
+    fitness0 = min([fitness_birth fitness_death]); % NaN's are ignored
 
     % check parents
     FID_family = p.childFamilies;
@@ -3040,7 +3040,7 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
     if result_F.err_code
         error(result_F.err_msg)
     else
-        vett_parent_fit = [];
+        vett_parent_fit = zeros(1,0);
         if ~isempty(result_F.pad_nome_to_be_checked)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.pad_nome,result_F.pad_nome_to_be_checked)]; % string distance
         end
@@ -3050,9 +3050,11 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
         if ~isempty(result_F.mad_cogn_to_be_checked)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.mad_cogn,result_F.mad_cogn_to_be_checked)]; % string distance
         end
+        bonus = [1 1 5]*fitness_thr; % allow a bad match if at least two are good
+        bonus = bonus(1:length(vett_parent_fit));
         
         %fitness = fitness0*mean([val_pad_nome val_mad_nome val_mad_cogn]); % Formula too favorable: if date is quite close, alos a very bad fitness on parent's names can't decrease enough final fitness, and false matches are possible
-        fitness = fitness0+max(0,mean(vett_parent_fit-fitness_thr));
+        fitness = fitness0+max(0,mean(sort(vett_parent_fit)-bonus));
         
         ks_parents = sprintf('di %s (%.2f) e %s (%.2f) %s (%.2f) -> %f',result_F.pad_nome_to_be_checked,val_pad_nome,result_F.mad_nome_to_be_checked,val_mad_nome,result_F.mad_cogn_to_be_checked,val_mad_cogn,fitness0);
     end
