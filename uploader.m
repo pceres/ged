@@ -3034,13 +3034,22 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
     % if dates are not clearly incompatible, try to analyze parent's names
     fitness0 = min([fitness_birth fitness_death]); % NaN's are ignored
 
-    % check parents
+    % check surname and parents
     FID_family = p.childFamilies;
     result_F = get_pgv_parents(archive,FID_family,class_instance,SID);
+    z=regexp(p.gedcomName,'/([^/]+)/','tokens');
+    if isempty(z)
+        cogn_p = '';
+    else
+        cogn_p = upper(z{1}{1});
+    end
     if result_F.err_code
         error(result_F.err_msg)
     else
         vett_parent_fit = zeros(1,0);
+        if ~isempty(cogn_p)
+            vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.cogn,cogn_p)]; % string distance
+        end
         if ~isempty(result_F.pad_nome_to_be_checked)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.pad_nome,result_F.pad_nome_to_be_checked)]; % string distance
         end
@@ -3050,13 +3059,13 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
         if ~isempty(result_F.mad_cogn_to_be_checked)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.mad_cogn,result_F.mad_cogn_to_be_checked)]; % string distance
         end
-        bonus = [1 1 5]*fitness_thr; % allow a bad match if at least two are good
+        bonus = [1 1 1 5]*fitness_thr; % allow a bad match if at least three are good
         bonus = bonus(1:length(vett_parent_fit));
         
         %fitness = fitness0*mean([val_pad_nome val_mad_nome val_mad_cogn]); % Formula too favorable: if date is quite close, alos a very bad fitness on parent's names can't decrease enough final fitness, and false matches are possible
         fitness = fitness0+max(0,mean(sort(vett_parent_fit)-bonus));
         
-        ks_parents = sprintf('di %s (%.2f) e %s (%.2f) %s (%.2f) -> %f',result_F.pad_nome_to_be_checked,val_pad_nome,result_F.mad_nome_to_be_checked,val_mad_nome,result_F.mad_cogn_to_be_checked,val_mad_cogn,fitness0);
+        ks_parents = sprintf('%s di %s (%.2f) e %s (%.2f) %s (%.2f) -> %f --> %f',p.gedcomName,result_F.pad_nome_to_be_checked,val_pad_nome,result_F.mad_nome_to_be_checked,val_mad_nome,result_F.mad_cogn_to_be_checked,val_mad_cogn,fitness0,fitness);
     end
 else
     fitness = 1;
