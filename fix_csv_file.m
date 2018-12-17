@@ -30,7 +30,7 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-tag = 'file10_rc_20180727';
+tag = 'file10_rc_20181021';
 work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
 csvfile_dst     = [tag '_.csv'];    % proposed update, read only
@@ -459,7 +459,7 @@ end
 function lines_fix = rework_fix_file_6(str_fix,lines_fix,table_fix,lines_src) %#ok<INUSL>
 % reset dd/mm/yyyy to original yyyy when needed
 
-fmt_ok = '^[0-9]{4}$';
+fmt_ok = '^[0-9]{4}$'; % year-only date format
 col_max = 39; % last column to be fixed
 col_id = 1; % position of ID column
 
@@ -474,19 +474,42 @@ for i_line = 1:length(ind)
     
     ID_src = table_src{ind_src,col_id};
     
-    ks = sprintf('%s;',record_src{2:6});ks=ks(1:end-1);
+    ks = sprintf('%s;',record_src{2:6});
     
     ind_fix = find(~cellfun('isempty',regexp(lines_fix,ks)));
+    
+    % remove false positive: fingerprint found in later columns (for
+    % example in the mother or father fields instead of the name/surname ones
+    list_delete = [];
+    for i_match = 1:length(ind_fix)
+        if regexp(lines_fix{ind_fix(i_match)},ks) > 20
+            list_delete(end+1) = i_match; %#ok<AGROW>
+        end
+    end
+    ind_fix(list_delete) = [];
+    
     record_fix = table_fix(ind_fix,:);
     if isempty(ind_fix)
-        if isempty(strmatch(ID_src,table_fix(:,col_id),'exact'))
+        ind_fix2 = strmatch(ID_src,table_fix(:,col_id),'exact');
+        flg_pause = 1; % default: pause to let the user check
+        if isempty(ind_fix2)
             msg_deleted = ', deleted';
         else
+            disp([record_src(1:6);table_fix(ind_fix2,1:6)])
+            z_src=regexp(record_src(1:6),';','split');z_src = [z_src{:}];
+            z_fix=regexp(table_fix(ind_fix2,1:6),';','split');z_fix = [z_fix{:}];
+            flg_was_empty   = ~cellfun('isempty',z_src);
+            flg_changed = ~strcmp(z_src,z_fix);
+            if ~any(flg_was_empty & flg_changed)
+                flg_pause = 0;
+            end
             msg_deleted = ', still existing';
         end
             
         fprintf(1,'No match found in src file, line %d (ID %s%s): %s\n',ind_src,ID_src,msg_deleted,ks)
-        pause
+        if flg_pause
+            pause
+        end
         continue
     elseif (length(ind_fix)>1)
         %disp([record_src(:,1:col_max);record_fix(:,1:col_max)])
@@ -531,14 +554,14 @@ for i_line = 1:length(ind)
                         fprintf(1,'\tOld date "%s" was completed, should I reset it or leave the new one "%s"?\n',record_src{i},record_fix{i})
                         r = input('keep New, or Reset to old date? [N/r] ','s');
                         if isempty(r) || strcmpi(r,'N')
-                            fprintf(1,'\t\tLeave new (%s).n',record_fix{i})
+                            fprintf(1,'\t\tLeave new (%s)\n',record_fix{i})
                         else
-                            fprintf(1,'\t\tReset to old (%s).n',record_src{i})
+                            fprintf(1,'\t\tReset to old (%s)\n',record_src{i})
                             record_fix{i}=record_src{i};
                             flg_changed = 1;
                         end
                     else
-                        if ( abs(year_fix - str2double(record_src{i})) <= 1 ) % if year change is less than 2 years, ask before resetting to src value
+                        if ( abs(year_fix - str2double(record_src{i})) <= 3 ) % if year change is less than 3 years, ask before resetting to src value
                             fprintf(1,'\tOld date "%s" was slightly changed, should I reset it or leave the new one "%s"?\n',record_src{i},record_fix{i})
                             r = input('keep New, or Reset to old date? [N/r] ','s');
                         else
