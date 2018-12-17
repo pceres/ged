@@ -475,6 +475,7 @@ for i_line = 1:length(ind)
     ID_src = table_src{ind_src,col_id};
     
     ks = sprintf('%s;',record_src{2:6});
+    ks = strrep(strrep(strrep(ks,'?','\?'),'.','\.'),'-','\-'); % escape characters that can be interpreted by regexp
     
     ind_fix = find(~cellfun('isempty',regexp(lines_fix,ks)));
     
