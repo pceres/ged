@@ -35,8 +35,8 @@ function build_family_recurse(str_archivio,wsdl_url,id_file,direction)
 
 % analisi sensitività con id_file 29095
 % vx=[.05 .08 .1 .125 .15 .185 .20 .25],vy=[41.530 41.530 34.604 54.756 55.268 77.154 88.756 299.464],figure(1),plot(vx,vy,'.-'),xlabel('threshold\_search [adim]'),ylabel('build\_family result size [kB]'),grid on
-threshold_search = 0.1;
-threshold_accept = 0.09; % matches whose fitness is >= this threshold are discarded
+threshold_accept = 0.11; % matches whose fitness is >= this threshold are discarded
+threshold_search = threshold_accept+0.01;
 
 % prepare logfile
 logfile = 'logfile_bfr.txt';            % logfile with selected info, displayed by disp_log
