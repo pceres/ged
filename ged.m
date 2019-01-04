@@ -553,7 +553,7 @@ report = {};
 
 for i_record = 1:size(archivio,1)
     if (rem(i_record,1000) == 0)
-        fprintf(1,'%d/%d...\n',i_record/1000,floor(size(archivio,1)/1000))
+        fprintf(1,'%2d/%d...\n',i_record/1000,floor(size(archivio,1)/1000))
     end
 %i_record
     record = archivio(i_record,:);
@@ -625,8 +625,7 @@ for i=1:len_lista;
     ind_tag = v_ind_tag(i);
     
     ks = record{ind_tag};
-    if ismember(setdiff(ks,upper(ks)),'a':'z') % se c'e' qualche lettera minuscola
-        %if ~strcmp(ks,upper(ks))
+    if ( regexp(ks,'[a-z]','once') ) % se c'e' qualche lettera minuscola
         item.err_code = err_code;
         item.msgs = {sprintf('err.%d: lettere minuscole nel campo %s: %s',err_code,tag,ks)};
         items{end+1} = item;
@@ -638,6 +637,7 @@ end
 function [record items changed] = check_date(record,indici,items,item,err_code,init_flag)
 
 lista_ref = {'nasc','matr_civ','matr_rel','matr','mort','pad_nasc','mad_nasc'}; % all possible date fields
+debug_level = 0;
 
 persistent v_ind_tag lista
 
@@ -664,10 +664,12 @@ for i=1:length(lista);
         [ok g m a val_num_ok] = get_date_values(ks); % recupera i valori numerici dalla data
         if (~ok)
             numero = str2double(ks);
-            flg_only_year = ~isnan(numero) && (numero>1500) && (numero<2017); % detetc single year date (es. '1798')
+            flg_only_year = ~isnan(numero) && (numero>1500) && (numero<2017); % detete single year date (es. '1798')
             if (flg_only_year)
                 % data degenere: è presente solo l'anno (es. '1818')
-                fprintf(1,'record id %s - Formato data degenere, con solo anno, senza giorno e mese: %s\n',record{indici.id_file},ks)
+                if (debug_level >= 1)
+                    fprintf(1,'record id %s - Formato data degenere, con solo anno, senza giorno e mese: %s\n',record{indici.id_file},ks)
+                end
                 ok = 1;
             elseif ( ~isnan(numero) )
                 % prova a verificare se la data e' nella forma "-29675" invece di "10/01/1818"
@@ -691,9 +693,9 @@ for i=1:length(lista);
         end
     end
 
-    if ~ok
+    if ~ok && enable_warn(['ged' num2str(err_code) '_wrong_date_format_' tag],{record{indici.id_file} record{indici.(tag)}})
         item.msgs = {sprintf('err.%d: formato data errata nel campo %s: %s',err_code,tag,record{indici.(tag)})};
-        items{end+1} = item;
+        items{end+1} = item; %#ok<AGROW>
     end
 
     if (~isnan(g) && ~isnan(m) && ~isnan(a) && isfield(indici,['int_' tag '_num']))
@@ -720,10 +722,12 @@ for i=1:length(lista);
         if ( ((val_g ~= g) && ~isnan(val_g)) || ((val_m ~= m) && ~isnan(val_m)) || ((val_a ~= a) && (~isnan(val_a))) || ...
            ((abs(val_num-val_num_ok)>1e-4) && ~isnan(val_num)) )
 
-            item.msgs = {sprintf('err.%d: giorno-mese-anno (%02d-%02d-%d->%.4f) non coerenti con la data nel campo %s: %s (%.4f)',err_code,val_g,val_m,val_a,val_num,tag,ks,val_num_ok)};
-            items{end+1} = item;
-
-            changed = 1;
+            if enable_warn(['ged' num2str(err_code) '_day_month_year_incoherence_' tag],{record{indici.id_file} record{indici.(tag)}})
+                item.msgs = {sprintf('err.%d: giorno-mese-anno (%02d/%02d/%d->%.4f) non coerenti con la data nel campo %s: %s (%.4f)',err_code,val_g,val_m,val_a,val_num,tag,ks,val_num_ok)};
+                items{end+1} = item;
+           
+                changed = 1;
+            end
         end
 
         % imposta comunque i valori numerici coerenti con la data
@@ -752,6 +756,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [ok g m a val_num] = get_date_values(ks)
 
+persistent year_now
+
+if isempty(year_now)
+    vect=datevec(now);
+    year_now = vect(1);
+end
+    
 z=regexp(ks,'([0-9]{2})/([0-9]{2})/([0-9]{4})','tokens');
 if (~isempty(z))
     g = (ks(1)-double('0'))*10+ks(2)-double('0');
@@ -760,9 +771,6 @@ if (~isempty(z))
 
     val_num = (((g-1)/31+m-1)/12+a);
 
-    vect=datevec(now);
-    year_now = vect(1);
-    
     res = datevec(datenum(a,m,g));
     ok = isequal(res(1:3),[a m g]) && (g >= 1 && g <= 31) && (m >= 1 && m <= 12) && (a >= 1500 && a <= year_now);
 else
@@ -777,14 +785,17 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [record items changed] = check_numeri(record,indici,items,item,err_code,init_flag)
 
-persistent v_ind_tag v_ind_tag_src
+persistent v_ind_tag v_ind_tag_src flg_special_eta flg_special_Nr len_max_Nr
 
-lista =     {'id_file','nasc_Nr','matr_Nr','mort_Nr','eta',...
+lista =     {'id_file','nasc_Nr','matr_Nr','mort_Nr','eta','matr_eta',...
              'nasc_a','nasc_m','nasc_g','nasc_num','matr_a','matr_m','matr_g','matr_num',...
              'mort_a','mort_m','mort_g','mort_num'};
-lista_src = {''      ,''      ,''      ,''       ,''      ,...
+lista_src = {''      ,''      ,''      ,''       ,''      ,''        ,...
              'nasc'  ,'nasc'  ,'nasc'  ,'nasc'   ,'matr'  ,'matr'  ,'matr'  ,'matr'   ,...
              'mort'  ,'mort'  ,'mort'  ,'mort'   };
+
+max_eta = 120; % age threshold above which a warning is issued
+max_Nr  = 300; % max number of records per year. This value could be little for a big city, but is ok for a small town
 
 if (init_flag)
     for i=1:length(lista)
@@ -796,13 +807,22 @@ if (init_flag)
             val = NaN;
         end
         v_ind_tag_src(i) = val;
+        
+        flg_special_eta(i) = 0;
+        flg_special_Nr(i)  = 0;
+        if ( regexp(lista{i},'eta$','once') ) % if tag ends by 'eta'
+            flg_special_eta(i) = 1;         
+        elseif ( regexp(lista{i},'_Nr$','once') ) % if tag ends by '_Nr'
+            flg_special_Nr(i) = 1;            
+        end
     end
+    len_max_Nr = length(num2str(max_Nr));
 end
 
 changed = 0;
 len_lista = length(lista);
 for i=1:len_lista
-    ind_tag = v_ind_tag(i);
+    ind_tag = v_ind_tag(i); % index within 'record' cell array
 
     ok = 0;
     if (isempty(record{ind_tag}))
@@ -830,16 +850,51 @@ for i=1:len_lista
 
         ok = 1;
     else
+        % field is not empty
         ks = record{ind_tag};
-        z=regexp(ks,'([0-9\.]+)','match');
+        
+        %check if it is a number
+        z = regexp(ks,'([0-9\.]+)','match','once'); % simple decimal number (digits or .)
         if (isempty(z))
-            z=regexp(ks,'^\s*([0-9\.\+\-]+)\s*$','tokens');
+            z = regexp(ks,'^\s*([0-9\.\+\-]+)\s*$','tokens'); % decimal number with sign
             if (~isempty(z))
                 ks_numero = z{1}{1};
             end
         else
-            ks_numero = z{1};
+            ks_numero = z;
         end
+        
+        % special checks for age and record number fields
+        if flg_special_eta(i)
+            if ~strcmp(ks_numero,ks)
+                % special check for age fields
+                z = regexp(ks,'([MGO])\. ([0-9]+|POCHI)','tokens'); % 'M. 3' (months) or 'G. 20' (days) or 'O. 4' (hours) or 'M. POCHI' (a few months)
+                if (~isempty(z))
+                    ks_numero = ks;
+                end
+            else
+                % check simple number
+                if str2double(ks_numero) > max_eta % excessive age
+                    ks_numero = ''; % trigger a warning
+                end
+            end
+        end
+        % special check for record number fields
+        if flg_special_Nr(i)
+            if ~strcmp(ks_numero,ks)
+                z = regexp(ks,'PARTE III? ([0-9]+)( [0-9]+)?','tokens'); % 'PARTE III 2 1895', 'PARTE II 2 1895', 'PARTE II 2' (same year of the date)
+                if (~isempty(z))
+                    ks_numero = ks;
+                end
+            else
+                % check simple number
+                if ( (length(ks_numero) == len_max_Nr) && (str2double(ks_numero) > max_Nr) ) % excessive number
+                    ks_numero = ''; % trigger a warning
+                end
+            end
+        end
+
+        
         if (~isempty(z))
             ks_corrected = ks_numero;
             if (~isempty(ks_corrected))
@@ -856,8 +911,10 @@ for i=1:len_lista
 
     if (ok == 0)
         tag = lista{i};
-        item.msgs = {sprintf('err.%d: formato numerico errato nel campo %s: %s',err_code,tag,record{indici.(tag)})};
-        items{end+1} = item; %#ok<AGROW>
+        if enable_warn(['ged' num2str(err_code) '_wrong_numeric_format'],{record{indici.id_file} tag record{indici.(tag)}})
+            item.msgs = {sprintf('err.%d: formato numerico errato nel campo %s: %s',err_code,tag,record{indici.(tag)})};
+            items{end+1} = item; %#ok<AGROW>
+        end
     end
 end
 
@@ -872,23 +929,57 @@ nasc_num = record{indici.int_nasc_num};
 matr_num = record{indici.int_matr_num};
 mort_num = record{indici.int_mort_num};
 
+% if a date has some unreadable number (i.e. a 0 in the day field), treat
+% the whole date as missing, and ignore it as far as this check is
+% concerned
+nasc_g = record{indici.int_nasc_g}; if (nasc_g==0), nasc_num=NaN; end
+matr_g = record{indici.int_matr_g}; if (matr_g==0), matr_num=NaN; end
+mort_g = record{indici.int_mort_g}; if (mort_g==0), mort_num=NaN; end
+
+ks_nasc = record{indici.nasc};
+ks_matr = record{indici.matr};
+ks_mort = record{indici.mort};
+
+nasc2matr_min = 10;  % [year] max allowed distance between birth and marriage
+nasc2matr_max = 95;  % [year] max allowed distance between birth and marriage
+
+nasc2mort_min = 0;   % [year] max allowed distance between birth and death
+nasc2mort_max = 105; % [year] max allowed distance between birth and death
+
+matr2mort_min = 0;   % [year] max allowed distance between birth and death
+matr2mort_max = 90; % [year] max allowed distance between birth and death
+
 if (~isnan(nasc_num))
-    if ( (~isnan(matr_num)) && (nasc_num > matr_num) )
-        ok = 0;
+    if (~isnan(matr_num))
+        nasc2matr = matr_num-nasc_num;
+        if (nasc2matr < nasc2matr_min) || (nasc2matr > nasc2matr_max)
+            ks_mort = '*'; % dummy date
+            ok = 0;
+        end
     end
-    if ( (~isnan(mort_num)) && (nasc_num > mort_num) )
-        ok = 0;
+    if (~isnan(mort_num))
+        nasc2mort = mort_num-nasc_num;
+        if (nasc2mort < nasc2mort_min) || (nasc2mort > nasc2mort_max)
+            ks_matr = '*'; % dummy date
+            ok = 0;
+        end
     end
 end
-if (~isnan(matr_num))
-    if ( (~isnan(mort_num)) && (matr_num > mort_num) )
-        ok = 0;
+if (ok && ~isnan(matr_num))
+    if (~isnan(mort_num))
+        matr2mort = mort_num-matr_num;
+        if (matr2mort < matr2mort_min) || (matr2mort > matr2mort_max)
+            ks_nasc = '*'; % dummy date
+            ok = 0;
+        end
     end
 end
 
 if ~ok
-    item.msgs = {sprintf('err.%d: date incoerenti (B:%s M:%s D:%s)',err_code,record{indici.nasc},record{indici.matr},record{indici.mort})};
-    items{end+1} = item;
+    if enable_warn(['ged' num2str(err_code) '_birth_marr_death_incoherence'],{record{indici.id_file} ks_nasc ks_matr ks_mort})
+        item.msgs = {sprintf('err.%d: date incoerenti (B:%s M:%s D:%s)',err_code,record{indici.nasc},record{indici.matr},record{indici.mort})};
+        items{end+1} = item;
+    end
 end
 
 
@@ -1752,4 +1843,23 @@ for krk1=1:krk
         end
     end
     d(krk1) = dl(lu1,li1);
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function flg_enab = enable_warn(warn_type,params)
+
+matr_exception = fix_csv_file_config('get_warn_exceptions',{warn_type}); % list of false positives that need to be filtered out
+
+id = params{1};
+list_id = matr_exception(:,1);
+
+ind_id = strmatch(id,list_id,'exact');
+flg_enab = 1; % by default warning is enabled
+if ~isempty(ind_id)
+    % the warning is in the exception list, check if other parameters match
+    if isequal(params,matr_exception(ind_id,:))
+        flg_enab = 0; % full match, disable the warning message
+    end
 end

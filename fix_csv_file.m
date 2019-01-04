@@ -597,7 +597,7 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ks_date = merge_multiple_dates(matr_date,ks_date_header,ks_id)
+function ks_date = merge_multiple_dates(matr_date,ks_date_header,ks_id,ind_tag)
 % merge multiple columns into one, according the rules:
 %   - empty if no date available;
 %   - the only possible date, if only one is available;
@@ -613,7 +613,6 @@ if ( num_col>1 )
     fprintf(1,'\t- the only date possible, if only one is available among "%s" and "%s";\n',ks_date_header{:})
     fprintf(1,'\t- "%s" date, if both are available.\n',ks_date_header{1})
     
-    max_delta = 90; % [giorni]
     for i=1:size(matr_date,1)
         vett_ks = matr_date(i,:);
         id_i = ks_id{i};
@@ -628,7 +627,7 @@ if ( num_col>1 )
                     vett_num = datenum(vett_ks,'dd/mm/yyyy');
                 else
                     flg_only_years_for_both = isequal(vett_ks{1},vett_ks{2}) && regexp(vett_ks{1},'^1[0-9]{3,3}$'); % only year is available in both fields
-                    if ~flg_only_years_for_both
+                    if ~flg_only_years_for_both && enable_warn(['7_wrong_format_' ind_tag],[id_i vett_ks])
                         disp(vett_ks)
                         fprintf(1,'Not all dates are in the dd/mm/yyyy format! (ID %s)\n',id_i)
                         pause
@@ -636,9 +635,6 @@ if ( num_col>1 )
                     continue
                 end
                 delta = max(abs(diff(vett_num)));
-                if ( delta>max_delta )
-                    fprintf(1,'\t\tBig date difference (more than %d days): %s\n',max_delta,sprintf('%s, ',vett_ks{:}))
-                end
                 % check for swap in one of the two dates
                 vett1=datevec(vett_ks{1},'dd/mm/yyyy');
                 vett2=datevec(vett_ks{2},'dd/mm/yyyy');
@@ -658,7 +654,7 @@ if ( num_col>1 )
                     % no check possible
                     delta_swap = inf;
                 end
-                if ((year1==year2) && (delta_swap<delta) && (delta_swap<20) )
+                if ( (year1==year2) && (delta_swap<delta) && (delta_swap<20) && enable_warn(['7_swapped_dates_' ind_tag],{id_i,vett_ks{1},vett_ks{2}}) )
                     fprintf(1,'\t\t\tATTENTION! Possible swap in day\\month columns: ID %s: %s - %s\n',id_i,vett_ks{1},vett_ks{2})
                 end
             end
@@ -712,7 +708,7 @@ for i_event=1:size(matr_ind,1)
     %   - empty if no marriage available
     %   - the only date possible, if only one is available among civil and religious;
     %   - the civil marriage date, if both are available
-    ks_date = merge_multiple_dates(ks_date,ks_date_header,ks_id);
+    ks_date = merge_multiple_dates(ks_date,ks_date_header,ks_id,ind_tag);
     
     for i=1:length(ind_any)
         ind_i = ind_any(i);
@@ -733,7 +729,8 @@ for i_event=1:size(matr_ind,1)
         ks_date2 = [ks_day_i '/' ks_month_i '/' ks_year_i];
         
         if ~isequal(ks_date_i,ks_date2)
-            ks_dates = ['ID ' sprintf('%5s',ks_id_i) ': "' ks_date_i,'" <--> "',ks_day_i '/' ks_month_i '/' ks_year_i '"'];
+            ks_date_single_i = [ks_day_i '/' ks_month_i '/' ks_year_i];
+            ks_dates = ['ID ' sprintf('%5s',ks_id_i) ': "' ks_date_i,'" <--> "',ks_date_single_i '"'];
             
             if regexp(ks_date_i,'^1[6789][0-9][0-9]$')
                 % incomplete date format, only year
@@ -796,7 +793,10 @@ for i_event=1:size(matr_ind,1)
                         flg_fixed = 1;
                         fprintf(1,'\tOnly a few days of diff: %s\t\tColumns fixed!\n',ks_dates)
                     else
-                        fprintf(1,'????? Unmanaged: %s\n',ks_dates)
+                        % many days of difference
+                        if enable_warn(['7_great_delta_' ind_tag],{ks_id_i ks_date_i ks_date_single_i})
+                            fprintf(1,'????? Unmanaged: %s\n',ks_dates)
+                        end
                     end
                 end
             end
@@ -1456,3 +1456,22 @@ function ks = str_escape(ks_in)
 % replace quotes with double quotes
 
 ks = strrep(ks_in,'''','''''');
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function flg_enab = enable_warn(warn_type,params)
+
+matr_exception = fix_csv_file_config('get_warn_exceptions',{warn_type}); % list of false positives that need to be filtered out
+
+id = params{1};
+list_id = matr_exception(:,1);
+
+ind_id = strmatch(id,list_id,'exact');
+flg_enab = 1; % by default warning is enabled
+if ~isempty(ind_id)
+    % the warning is in the exception list, check if other parameters match
+    if isequal(params,matr_exception(ind_id,:))
+        flg_enab = 0; % full match, disable the warning message
+    end
+end

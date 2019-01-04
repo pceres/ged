@@ -80,7 +80,11 @@ if (verbose)
     report      = result.report;
     
     disp('show_items')
-    result = ged('show_items',report);
+    if ~isempty(report)
+        result = ged('show_items',report);
+    else
+        disp('    tutto ok.')
+    end
 
     if (~isequalwithequalnans(archivio,archivio_ok))
         archivio = archivio_ok;
