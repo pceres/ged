@@ -298,12 +298,13 @@ result.mask_fit = mask_fit;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function somma = for_body_find_person(record_i,indici,num,lista_num,lista_ks,soglia2)
 
-%%% debug_i = 0;
-% list_debug = {'56433','43825','43706','60310'};
-% if ismember(record_i{indici.id_file},list_debug)
-%     fprintf(1,'\n--- %4s) %s %s ---\n',record_i{indici.id_file},record_i{indici.nome},record_i{indici.cogn})
-%     debug_i = 1;
-% end
+debug_i = 0;
+%list_debug = {'54378','50303','60310'};
+list_debug = {};
+if ~isempty(list_debug) && ismember(record_i{indici.id_file},list_debug)
+    fprintf(1,'\n--- %4s) %s %s ---\n',record_i{indici.id_file},record_i{indici.nome},record_i{indici.cogn})
+    debug_i = 1;
+end
 
 somma = 0;
 % val_empty = 1/num; % initial value for empty fields
@@ -367,15 +368,33 @@ for i_field = 1:num
                         peso = 3;
                     end
                     
-                    if (ks2 >= min(ks1) && (ks2 <= max(ks1)) )
-                        % interno finestra --> fitness massima (0)
-                        val = 0;
+                    if 0
+                        % old calc
+                        if (ks2 >= min(ks1) && (ks2 <= max(ks1)) )
+                            % interno finestra --> fitness massima (0)
+                            val = 0;
+                        else
+                            % viene raggiunto il fitness peggiore (1) a una
+                            % distanza dal centro della finestra pari
+                            % all'estensione della finestra/peso
+                            val = abs(ks2-mean(ks1))/abs(deltat)/peso;
+                            val = min(val,1);
+                        end
                     else
-                        % viene raggiunto il fitness peggiore (1) a una
-                        % distanza dal centro della finestra pari
-                        % all'estensione della finestra/peso
-                        val = abs(ks2-mean(ks1))/abs(diff(ks1))/peso;
-                        val = min(val,1);
+                        % new calc
+                        deltat = diff(ks1); % [year] range of window in years
+                        dist = abs(ks2-mean(ks1))/deltat; % [year] distance from the center of the window
+                        if (dist <= 0.5 )
+                            % interno finestra --> fitness massima (0)
+                            val = 0;
+                        elseif (dist >= 0.5+peso)
+                            val = 1;
+                        else
+                            % viene raggiunto il fitness peggiore (1) a una
+                            % distanza dal centro della finestra pari
+                            % all'estensione della finestra/peso
+                            val = (dist-0.5)/peso;
+                        end                        
                     end
                 else
                     error('Unmanaged length for!')
@@ -383,17 +402,17 @@ for i_field = 1:num
                 end
             end
         end
-        %%% show_field_fitness(ks1,ks2,val,debug_i) % show fitness of the field, for debug
-        
         flag_i = val/num; % fitness normalizzata
         somma = somma+flag_i;
+        
+        show_field_fitness(ks1,ks2,val,flag_i,debug_i) % show fitness of the field, for debug
     end
 end
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function show_field_fitness(ks1,ks2,val,debug_i)
+function show_field_fitness(ks1,ks2,val,flag_i,debug_i)
 
 if debug_i
     list     = {ks1,ks2};
@@ -414,7 +433,7 @@ if debug_i
         list_out{i} = ks_msg;
     end
 
-    msg = sprintf('%-s - %s : %.3f',list_out{:},val);
+    msg = sprintf('%-s - %s : %.3f --> %.3f',list_out{:},val,flag_i);
     disp(msg)
 end
 
