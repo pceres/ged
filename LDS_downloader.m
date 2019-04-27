@@ -4,11 +4,16 @@ function result = LDS_downloader(varargin)
 %
 % LDS_downloader('LDS_checker');
 %
+%
+% result = LDS_downloader;
+%     Prepare iMacros script z_LDS_downloader so as to open the thumbnail
+%     view for the desired microfilm. Open Firefox and leave it focused,
+%     then launch LDS_downloader.
 
 
 folder_download = '/home/ceres/Downloads/'; % folder for downloads
-filename_download = [folder_download 'record-image.jpg']; % name of the downloaded image
-folder_archive  = '/mnt/usbdisk/RegistriAnagrafeCaposele/LDS_images/';
+filename_download = [folder_download 'record-image_undefined.jpg']; % name of the downloaded image
+folder_archive  = '/home/ceres/LDS_images/';
 
 matr_films = {};
 
@@ -44,7 +49,20 @@ matr_films = {};
 %     [0.77 0.33]
 %     'imgD%07d.jpg'
 %     };
-
+% matr_films(end+1,:) = {
+%     'Diversi volumi annuali di Caposele ed altri comuni'
+%     'https://www.familysearch.org/search/film/007068430?cat=409650' % LDS #1743729 item 2, start from #1346 to #1407
+%     1727
+%     [0.06 0.34]
+%     'imgE%07d.jpg'
+%     };
+matr_films(end+1,:) = {
+    'Pubblicazioni 1876'
+    'https://www.familysearch.org/search/film/007068214?cat=409650' % LDS #1742992 item 4, start from #153
+    2807
+    [0.06 0.34]
+    'imgF%07d.jpg'
+    };
 
 % %
 % % Teora
@@ -259,13 +277,13 @@ matr_films = {};
 %     'imgMontellaC%07d.jpg'
 %     };
 % 
-matr_films(end+1,:) = {
-    'Montella Nati 1907-1910 Pubblicazioni 1866-1910 Matrimoni 1866-1909 Morti 1872-1887'
-    'https://familysearch.org/pal:/MM9.3.1/TH-1942-32044-13050-33?cc=2043434&wc=MM1H-FGP:891444795'
-    2994
-    [0.10 0.41]
-    'imgMontellaD%07d.jpg'
-    };
+% matr_films(end+1,:) = {
+%     'Montella Nati 1907-1910 Pubblicazioni 1866-1910 Matrimoni 1866-1909 Morti 1872-1887'
+%     'https://familysearch.org/pal:/MM9.3.1/TH-1942-32044-13050-33?cc=2043434&wc=MM1H-FGP:891444795'
+%     2994
+%     [0.10 0.41]
+%     'imgMontellaD%07d.jpg'
+%     };
 
 
 
@@ -365,7 +383,7 @@ if flg_new_mode
     pause(0.1)
     
 else
-    % enter the url
+    % enter the url  %#ok<UNRCH>
     
     % click in url edit control
     robot.mouseMove(width*0.10, height*0.13);
@@ -382,8 +400,8 @@ else
     key_press(robot,sprintf('\n'));
 end
 
-pause(15) % wait for page loading
-wait_for_firefox_idle(3); % wait till firefox finishes its work
+pause(10) % wait for page loading
+wait_for_firefox_idle(15); % wait till firefox finishes its work
 
 
 
@@ -400,9 +418,6 @@ screenSize = get(0, 'screensize');
 width  = screenSize(3);
 height = screenSize(4);
 
-rwidth_ok  = 0.64; % rel x pos for Ok button
-rheight_ok = 0.78; % rel y pos for Ok button
-
 if ~exist('robot','var') || isempty(robot)
     import java.awt.Robot;
     import java.awt.event.*; % for KeyPress
@@ -411,11 +426,8 @@ if ~exist('robot','var') || isempty(robot)
 end
     
 % click save
-kx = 0.89;
-%kx = 0.83;
-%ky = 0.70;
-ky = 0.73;
-%deltax = -0.05;
+kx = 0.91;
+ky = 0.33;
 deltax = 0;
 robot.mouseMove(width*kx, height*ky); % have "Save" label appear
 pause(0.1)
@@ -423,22 +435,26 @@ robot.mouseMove(width*(kx+deltax), height*ky); % go over "Save" label
 pause(0.1)
 mouse_click(robot,'left')
 %pause(5) % wait for new window opening
-wait_for_firefox_idle(3); % wait till firefox finishes its work
+wait_for_firefox_idle(15); % wait till firefox finishes its work
 pause(.2) % wait for new window opening
 
+rwidth_ok  = 0.61; % rel x pos for Ok button
+rheight_ok = 0.61; % rel y pos for Ok button
+
 % select "save file" (instead of "open file")
-robot.mouseMove(width*(rwidth_ok-0.25), height*(rheight_ok-0.12));
+robot.mouseMove(width*(rwidth_ok-0.22), height*(rheight_ok-0.06));
 pause(0.1)
 mouse_click(robot,'left')
 pause(0.1)
 
 % click ok button
 robot.mouseMove(width*rwidth_ok, height*rheight_ok);
+pause(1)
 mouse_click(robot,'left')
 
 % wait for image saving
 pause(1)
-%wait_for_firefox_idle(3); % wait till firefox finishes its work
+%wait_for_firefox_idle(15); % wait till firefox finishes its work
 max_download_time = 10; % [s]
 ancora = 1;
 count = 0;
@@ -473,8 +489,8 @@ screenSize = get(0, 'screensize');
 width  = screenSize(3);
 height = screenSize(4);
 
-rwidth_ok  = 0.64; % rel x pos for Ok button
-rheight_ok = 0.78; % rel y pos for Ok button
+rwidth_ok  = 0.61; % rel x pos for Ok button
+rheight_ok = 0.61; % rel y pos for Ok button
 
 
 if ~ok_download
@@ -524,9 +540,9 @@ else
 end
 
 % check for multiple downloads
-filename_multiple = strrep(filename_download,'.jpg','(*).jpg');
+filename_multiple = strrep(filename_download,'.jpg','*.jpg');
 z_multiple = dir(filename_multiple);
-if ~isempty(z_multiple)
+if ( length(z_multiple)>1 )
     % multiple downloads detected!
     delete(filename_multiple)
     
@@ -578,7 +594,7 @@ if ( ~exist('robot','var') )
     
     robot = Robot;
     
-    film_edit_vect=[0.70 0.30];
+    film_edit_vect=[0.06 0.34]; % relative position of edit control to enter the image id
 end
 
 screenSize = get(0, 'screensize');
@@ -598,13 +614,16 @@ key_press(robot,'^(a)');
 % enter id of image
 key_press(robot,num2str(id));
 
-% press "go" button
-robot.mouseMove(width*(film_editx+0.09), height*film_edity);
-mouse_click(robot,'left')
+% % press "go" button
+% robot.mouseMove(width*(film_editx+0.09), height*film_edity);
+% mouse_click(robot,'left')
+
+% press "ENTER
+key_press(robot,sprintf('\n'));
 
 % wait for image loading
 pause(26)
-%wait_for_firefox_idle(3) % wait till firefox finishes its work
+%wait_for_firefox_idle(15) % wait till firefox finishes its work
 
 
 
@@ -836,6 +855,8 @@ height = screenSize(4);
 
 % every step downloads, do a longer pause to prevent download block by the site
 step = 30;
+%step_pause = 90; % [s] time pause every step downloads
+%step_pause = 75; % [s] time pause every step downloads
 step_pause = 60; % [s] time pause every step downloads
 if (rem(num_download,step)==0)
     fprintf(1,'\tPause (%d s) after %d images (%s)!\n',step_pause,step,datestr(now))
