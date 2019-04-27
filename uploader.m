@@ -2969,6 +2969,14 @@ spouseFamilies  = par_struct.spouseFamilies; % string with FID  (spouse families
 family_link = sprintf('%sfamily.php?famid=',wsdl_url(1:regexp(wsdl_url,'genservice')-1)); % PGV family link URL prefix
 % mng child family
 if ~isempty(childFamilies)
+    if ( iscell(childFamilies) && length(unique(childFamilies)) < length(childFamilies) )
+        ks_msg = sprintf('Warning! There are duplicated child families for PID %s:\n',PID);
+        ks_msg = sprintf('%s%s\n',ks_msg,sprintf('%s,',childFamilies{:}));
+        disp(childFamilies)
+        ks_msg = sprintf('%sPlease fix this manually on PhpGedView website, then continue\n',ks_msg);
+        msgbox(ks_msg)
+        childFamilies = unique(childFamilies);
+    end
     if ( iscell(childFamilies) && (length(childFamilies)>1) )
         error('Error in pgv gedcom: PID %s is children of more than one family: %s\n',PID,sprintf('%s,',childFamilies{:}))
     end
