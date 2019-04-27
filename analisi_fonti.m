@@ -456,7 +456,7 @@ for i_line = 1:length(list_line)
                     image_name  = z{1}{2};
                     params_line = {indice_type, image_name};
                 else
-                    z=regexp(line_i,'^altro\s+\(([a-zA-Z0-9_\s\,]+)\)\s+([a-zA-Z0-9_\s]+)','tokens');
+                    z=regexp(line_i,'^altro\s+\(([a-zA-Z0-9_\s\,/]+)\)\s+([a-zA-Z0-9_\s]+)','tokens');
                     if ~isempty(z)
                         type_line = 'altro';
                         altro_type  = z{1}{1};
@@ -481,18 +481,20 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function datenum_line = get_datenum(date_line)
+% '24 feb 1748' --> 638499 (using datenum function)
 
-month_ita = {'gen','mag','giu','lug','ago','set','ott','dic'};
-month_eng = {'jan','may','jun','jul','aug','sep','oct','dec'};
+months = {'gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'};
 
 z=regexp(date_line,'\s+','split');
 month=z{2};
-ind = strmatch(month,month_ita,'exact');
-if ~isempty(ind)
-    date_line = strrep(date_line,month_ita{ind},month_eng{ind});
+val_month = strmatch(month,months,'exact');
+if isempty(val_month)
+    error('Unrecognized month %s!',month)
 end
 
-datenum_line = datenum(date_line);
+val_year = str2double(z{3});
+val_day  = str2double(z{1});
+datenum_line = datenum(val_year,val_month,val_day);
 
 
 
