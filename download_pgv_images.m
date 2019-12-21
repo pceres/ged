@@ -19,6 +19,7 @@ function fitness_crop = download_pgv_images(pgvroot,gedcom,SID,dest_folder,varar
 % % or
 % fitness_crop = download_pgv_images('http://ars.altervista.org/PhpGedView/','caposele',{'I0000','I18'},'/home/ceres/')
 %
+% todo: check I902, image is too big
 
 
 %
@@ -51,7 +52,7 @@ elseif iscell(SID)
 end
 
 % multiple SID parameters
-if (nargin > 0)
+if (nargin > 4)
     i_item   = varargin{1};
     num_item = varargin{2};
 else

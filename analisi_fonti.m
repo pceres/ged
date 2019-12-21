@@ -15,8 +15,10 @@ function result = analisi_fonti(action,params)
 % % check for different images with the same name:
 % result = analisi_fonti('check_conflicts',{});
 %
-% % index analysis
-% result = analisi_fonti('analyse',{});
+% % index analysis (parameter is a regexp filter to match volumes)
+% result = analisi_fonti('analyse',{'San Lorenzo'});
+% result = analisi_fonti('analyse',{'Anagrafe'});
+% result = analisi_fonti('analyse',{'LDS'});
 %
 % % change image name format and numbering
 % result = analisi_fonti('reformat_images',{fullpath_and_format,img_fmt_new,start_num})
@@ -43,16 +45,19 @@ switch action
     case 'search'
         close all
         
+        volume_pat = ''; % use the whole archive, no restrictions on subset of archive (i.e. Church only)
         quiet = 1;
-        
-        [matr_source list_stream] = load_index(filename,quiet);
+        [matr_source list_stream] = load_index(filename,volume_pat,quiet);
         search_target(matr_source,list_stream,filename);
         
         result.matr_source = matr_source;
         
     case 'analyse'
+        close all
+        
+        volume_pat   = params{1};
         quiet = 0;
-        [matr_source list_stream] = load_index(filename,quiet);
+        [matr_source list_stream] = load_index(filename,volume_pat,quiet);
         
         result.matr_source = matr_source;
         result.list_stream = list_stream;
@@ -93,15 +98,15 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [matr_source list_stream] = load_index(filename,quiet)
+function [matr_source list_stream] = load_index(filename,volume_pat,quiet)
 
 list_stream = {
     {'Nati','Battezzati'}
-    {'Matrimoni'}
+    {'Matrimoni','Pubblicazioni'}
     {'Morti'}
     };
 
-matr_source = parsefile(filename);
+matr_source = parsefile(filename,volume_pat);
 
 for i_stream = 1:length(list_stream)
     analise_sources(matr_source,list_stream{i_stream},quiet);
@@ -196,7 +201,9 @@ for i_blk = 1:length(ind)
         %disp(matr_source_i{end})
         %fprintf(1,'No date_image line in block %s, skipping\n',matr_source_i{1})
     elseif (any(diff(datenum_blk)<0))
-        disp(matr_source_i')
+        for i_item = 1:3
+            disp(matr_source_i{i_item})
+        end
         disp(datestr(datenum_blk))
         disp(' ')
         disp(datestr(datenum_blk(diff(datenum_blk)<0)))
@@ -341,7 +348,9 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function matr_source = parsefile(filename)
+function matr_source = parsefile(filename,volume_pat)
+% read file with archive info (volumes, dates, etc.), and only consider
+% those volumes matching (regexp) volume_pat
 
 text = readfile (filename);
 
@@ -352,18 +361,24 @@ for i_volume = 1:(length(z_volume)-1)
 end
 list_volume{length(z_volume)} = strtrim(text(z_volume(end):end));
 
+count_volume = 0;
 matr_source{length(list_volume)} = [];
 for i_volume = 1:length(list_volume)
     volume_i = list_volume{i_volume};
     z_volume = regexp(volume_i,'[\-]{6,}[\r\n]+([^\r\n]+)[\r\n]+[\-]{6,}(.*)','tokens');
     alias_volume = z_volume{1}{1};
-    body_volume  = strtrim(z_volume{1}{2});
     
-    % fprintf(1,'\n%2d) volume %s:\n',i_volume,alias_volume)
-    % disp(body_volume);
-    
-    matr_source{i_volume} = parse_body_volume(alias_volume,body_volume);
+    if isempty(volume_pat) || ~isempty(regexp(alias_volume,volume_pat, 'once'))
+        body_volume  = strtrim(z_volume{1}{2});
+        
+        % fprintf(1,'\n%2d) volume %s:\n',i_volume,alias_volume)
+        % disp(body_volume);
+        
+        count_volume = count_volume+1;
+        matr_source{count_volume} = parse_body_volume(alias_volume,body_volume);
+    end
 end
+matr_source((count_volume+1):end) = [];
 % consolida cell array
 matr_source = cellcell2cell(matr_source);
 
