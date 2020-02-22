@@ -28,7 +28,7 @@ function result = ged(action,varargin)
 %
 % % record to msg
 % mode = 'verbose'; % allowed modes: {'oneline','verbose'}
-% result = ged('record2msg',str_archivio,48856,mode);
+% result = ged('record2msg',str_archivio,48856,'verbose')
 %
 % strfielddist
 % val = ged('strfielddist','ANGELO MARIA','ANGIOLO')  --> val [0..1]  0->identical

@@ -2976,12 +2976,15 @@ if ~isempty(childFamilies)
         ks_msg = sprintf('%sPlease fix this manually on PhpGedView website, then continue\n',ks_msg);
         msgbox(ks_msg)
         childFamilies = unique(childFamilies);
+        if iscell(childFamilies) && (length(childFamilies)==1)
+            childFamilies = childFamilies{1};
+        end
     end
     if ( iscell(childFamilies) && (length(childFamilies)>1) )
         error('Error in pgv gedcom: PID %s is children of more than one family: %s\n',PID,sprintf('%s,',childFamilies{:}))
     end
     child_family_link   = [family_link childFamilies];
-    child_family_atab   = sprintf('<a href="%s">%s</a>',child_family_link,childFamilies);
+    child_family_atab   = sprintf('<a href="%s">%s</a>',child_family_link,childFamilies); % tested on a single match case (child_family_link is a string, childFamilies is a string)
 else
     child_family_atab   = '';
 end
