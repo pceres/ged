@@ -327,6 +327,9 @@ switch fix_type
     case 8 % move marriage date in 1748-1809 range into "Data di matrimonio religioso" column
         lines_fix = rework_fix_file_8(str_fix,lines_fix,table_fix,lines_src);
         
+    case 9 % find bad civil marriage dates, and try to recover them from the source file
+        lines_fix = rework_fix_file_9(str_fix,lines_fix,table_fix,lines_src);
+        
     otherwise
         error('todo: %d',fix_type)
 end
@@ -365,9 +368,10 @@ function lines_fix = rework_fix_file_4(str_fix,lines_fix,table_fix,lines_src) %#
 ind_delete = [];
 [a b c] = unique(table_fix(:,1));
 ind=setdiff(1:length(c),b);
+v_id = table_fix(ind,1);
 for i=1:length(ind)
     fprintf(1,'\n%3d)\n\n',i);
-    id=table_fix{ind(i),1};
+    id=v_id(i);
     ind2=strmatch(id,table_fix(:,1));
     fprintf(1,'\tlines %d - %d\n',ind2(1),ind2(2));
     
@@ -408,6 +412,8 @@ for i=1:length(ind)
     end
     
 end
+
+fprintf(1,'*** Found %d duplicated IDs:\n\n',length(ind));disp(v_id')
 
 lines_fix(ind_delete) = []; % remove useless merged lines
 
@@ -868,6 +874,146 @@ for i=1:length(ind_any)
         end
     end
 end
+
+if flg_fixed
+    lines_fix = table_to_lines(table_fix);
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function lines_fix = rework_fix_file_9(str_fix,lines_fix,table_fix,lines_src)
+% find bad civil marriage dates, and try to recover them from the source file
+
+z=regexp(lines_src,';','split');
+table_src=reshape([z{:}],length(z{1}),length(lines_src))';
+
+tag_src = 'Data di matrimonio';
+tag_dst = 'Data di matrimonio religioso';
+
+ind_id              = 1; % ID is in the first column
+ind_data_matr       = strmatch(tag_src,table_fix(1,1:end),'exact');
+ind_data_matr_relig = strmatch(tag_dst,table_fix(1,1:end),'exact');
+
+flg_fixed = 0;
+
+ind_any=find([0;any(~cellfun('isempty',table_fix(2:end,[ind_data_matr ind_data_matr_relig])),2)]); % record con almeno una cella non vuota
+
+ks_id              = table_fix(ind_any,ind_id);
+ks_date_matr       = table_fix(ind_any,ind_data_matr);
+ks_date_matr_relig = table_fix(ind_any,ind_data_matr_relig);
+
+last_correct_datenum = datenum(str_fix.last_correct_date,'dd/mm/yyyy');
+
+count_bad1 = 0;
+count_bad2 = 0;
+count_doubt1 = 0;
+count_doubt2 = 0;
+for i=1:length(ind_any)
+    ind_i = ind_any(i);
+    
+    id_i                    = ks_id{i};
+    ks_date_matr_i          = ks_date_matr{i};
+    ks_date_matr_relig_i    = ks_date_matr_relig{i};
+    
+    if ~isempty(ks_date_matr_i)
+        % data matrimonio presente
+        flg_date_ok1 = ~isempty(regexp(ks_date_matr_i,'([0-9]{2})/([0-9]{2})/([0-9]{4})','once'));
+        flg_date_ok2 = ~isempty(regexp(ks_date_matr_i,'([0-9]{4})','once'));
+        flg_date_ok = flg_date_ok1 || flg_date_ok2;
+        if flg_date_ok
+            
+            if flg_date_ok1
+                
+                flg_date_bad1 = flg_date_ok1 && (str2double(ks_date_matr_i(4:5))>12); % wrong month!
+                flg_date_bad2 = flg_date_ok1 && (datenum(ks_date_matr_i,'dd/mm/yyyy')>last_correct_datenum); % good date after the threshold date
+                flg_date_cross_ = flg_date_ok1 && (length(ks_date_matr_relig_i)==10) && strcmp(ks_date_matr_i(1:2),ks_date_matr_relig_i(4:5)); % religious marriage month matches the civil marriage day!
+                flg_date_bad3 = flg_date_bad1 && flg_date_cross_; % new anomaly!
+                flg_date_bad = flg_date_bad1 || flg_date_bad2 || flg_date_bad3;
+                if flg_date_bad
+                    % find corrsponding record in source file
+                    ks_matr       = '';
+                    ks_matr_relig = '';
+                    flg_date_doubt = 0;
+                    ind_src_i = strmatch(id_i,table_src(:,ind_id),'exact');
+                    if isempty(ind_src_i)
+                        % new record
+                        ks_date_matr_src_i          = '<missing>';
+                        ks_date_matr_relig_src_i    = '<missing>';
+                    else
+                        % ID already existed in source file
+                        ks_date_matr_src_i          = table_src{ind_src_i,ind_data_matr};
+                        ks_date_matr_relig_src_i    = table_src{ind_src_i,ind_data_matr_relig};
+                        
+                        if ~isempty(ks_date_matr_src_i) && ~strcmp(ks_date_matr_i,ks_date_matr_src_i)
+                            % civil marriage date changed!
+                            ks_matr     = '!!';
+                        end
+                        if isempty(ks_date_matr_src_i) && ~strcmp(ks_date_matr_i,ks_date_matr_relig_src_i)
+                            % civil marriage date was added, and is different from religious one
+                            flg_date_doubt = 1; % the date is potentially wrong
+                            ks_matr     = '??';
+                            if ~flg_date_cross_
+                                ks_matr = [ks_matr ' CHECK! ']; %#ok<AGROW>
+                            end
+                        end
+                        if ~isempty(ks_date_matr_relig_src_i) && ~strcmp(ks_date_matr_relig_i,ks_date_matr_relig_src_i)
+                            % religious marriage date changed
+                            ks_matr_relig     = '!!';
+                        end
+                        
+                    end
+                    
+                    flg_delete_i = 0;
+                    msg = '    ';
+                    if flg_date_bad1
+                        count_bad1 = count_bad1+1;
+                        msg = '*** '; % wrong month
+                        flg_delete_i = 1;
+                    elseif flg_date_doubt
+                        if ~flg_date_cross_
+                            count_doubt2 = count_doubt2+1;
+                            msg = '### '; % possibly good date
+                        else
+                            count_doubt1 = count_doubt1+1;
+                            msg = '??? '; % possibly wrong date
+                            flg_delete_i = 1;
+                        end
+                    elseif flg_date_bad2
+                        if ~flg_date_bad3
+                            count_bad2 = count_bad2+1;
+                            msg = '--- '; % good date (already present in reference file), but after the threshold
+                        else
+                            error('New unexpected anomaly! %s (%s) - %s (%s)',ks_date_matr_i,ks_date_matr_src_i,ks_date_matr_relig_i,ks_date_matr_relig_src_i);
+                        end
+                    end
+                    
+                    ks_delete = '';
+                    if flg_delete_i
+                        % reset the date
+                        flg_fixed = 1;
+                        table_fix{ind_i,ind_data_matr} = '';
+                        ks_delete = ': -> deleted';
+                    end
+                    
+                    fprintf('%s %s: %s%s (%s) - %s%s (%s) %s\n',msg,id_i,ks_date_matr_i,ks_matr,ks_date_matr_src_i,ks_date_matr_relig_i,ks_matr_relig,ks_date_matr_relig_src_i,ks_delete);
+                end
+            end
+
+        else
+            fprintf(1,'\tLine %d: wrong date format: "%s"\n',ind_i,ks_date_matr_i)
+            error('b')
+        end
+    end
+end
+
+fprintf(1,'\n');
+fprintf(1,'surely bad (***): %d cleared\n',count_bad1);
+fprintf(1,'probably bad (???): %d cleared\n',count_doubt1);
+fprintf(1,'probably good (###): %d preserved\n',count_doubt2);
+fprintf(1,'almost surely good (---): %d preserved\n',count_bad2);
+
+
 
 if flg_fixed
     lines_fix = table_to_lines(table_fix);
