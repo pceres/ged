@@ -12,6 +12,7 @@ function fix_csv_file(fix_type,enable_write)
 %   6 : reset dd/mm/yyyy to original yyyy when needed
 %   7 : crosscheck date with single month and day columns
 %   8 : *** move marriage date in 1748-1809 range into "Data di matrimonio religioso" column
+%   9 : *** find bad civil marriage dates, and try to recover them from the source file
 %
 % enable_write: [0,1] 1-> enable writing dst file if fixed
 %
@@ -30,7 +31,7 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-tag = 'file10_rc_20181021';
+tag = 'file10_rc_20200313';
 work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
 csvfile_dst     = [tag '_.csv'];    % proposed update, read only
@@ -124,6 +125,16 @@ switch fix_type
         str_fix.marriage_year_range = [1748 1809];
         flg_write = 1;
         
+    case 9 % find bad civil marriage dates, and try to recover them from the source file
+        file_src = [work_folder csvfile_src];
+        file_dst = [work_folder csvfile_dst];
+        file_fix = [work_folder csvfile_fix];
+        str_fix.pat_bad = '';
+        str_fix.pat_substr_ok = '';
+        str_fix.lines_dst_to_correct = [1 inf];
+        str_fix.last_correct_date = '01/02/1912'; % 1 febbraio 1912
+        flg_write = 1;
+        
     otherwise
         error('errore!')
 end
@@ -131,6 +142,7 @@ end
 filename = file_src;
 if ~isempty(filename)
     z = dir(filename);
+    if isempty(z),error('File "%s" does not exist!',filename),end
     fid = fopen(filename, 'r');if (fid<1),error('Cannot open file %s',filename);end
     c = fread(fid, z(1).bytes);
     fclose(fid);
@@ -144,6 +156,7 @@ lines_src = lines;
 filename = file_dst;
 if ~isempty(filename)
     z = dir(filename);
+    if isempty(z),error('File "%s" does not exist!',filename),end
     fid = fopen(filename, 'r');if (fid<1),error('Cannot open file %s',filename);end
     c = fread(fid, z(1).bytes);
     fclose(fid);

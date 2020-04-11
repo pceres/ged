@@ -99,7 +99,7 @@ switch tag
         % Used by record2msg
         % Default place (regexp format). In case of different place, it
         % will be shown
-        result = 'CAPOSELE';
+        result = '<your_default_place>';
         
     otherwise
         error('Unknown uploader configuration tag "%s"',tag)
