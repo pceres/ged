@@ -95,6 +95,12 @@ switch tag
         % Name of the gedcom to be updated on the pgv site
         result = '<your_gedcom>';
         
+    case 'default_place'
+        % Used by record2msg
+        % Default place (regexp format). In case of different place, it
+        % will be shown
+        result = 'CAPOSELE';
+        
     otherwise
         error('Unknown uploader configuration tag "%s"',tag)
 end

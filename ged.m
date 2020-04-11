@@ -135,18 +135,18 @@ switch action
             fprintf(1,'Ho aggiustato il file %s\n',filename)
         end
         result.status = status;
-
+        
     case 'find_person'
         person_rec   = varargin{1};
         str_archivio = varargin{2};
         relax_factor = varargin{3}; % 0  -> only exact matches
         soap_struct  = varargin{4}; % [] -> no SOAP activity
-
+        
         archivio = str_archivio.archivio;
         [status result] = find_person(person_rec,archivio,relax_factor);
-
+        
         result.status  = status;
-
+        
         if isempty(soap_struct)
             result.result_soap = struct([]);
         else
@@ -156,11 +156,11 @@ switch action
         end
         flg_quiet = 0; % show output
         show_report_with_soap(str_archivio,result,flg_quiet);
-
+        
     case 'strfielddist'
         ks1   = varargin{1};
         ks2   = varargin{2};
-
+        
         val = strfielddist(ks1,ks2);
         
         result = val;
@@ -182,7 +182,7 @@ switch action
         ks_nome = varargin{1};
         
         result = determine_sex(ks_nome);
-
+        
     otherwise
         error('Unknown action %s!',action)
 end
@@ -197,26 +197,59 @@ function msg = record2msg(record,mode)
 
 indici = indici_archivio();
 
-switch mode
-    case 'oneline'
-        msg = sprintf('%s) %s %s %s - b:%s,%s (%s, %s %s) - m:%s,%s (%s %s) - d:%s,%s - note: %s',record{indici.id_file},record{indici.nome},record{indici.nome_2},record{indici.cogn},record{indici.nasc_Nr},record{indici.nasc},record{indici.pad_nome},record{indici.mad_nome},record{indici.mad_cogn},record{indici.matr_Nr},record{indici.matr},record{indici.con_nome},record{indici.con_cogn},record{indici.mort_Nr},record{indici.mort},record{indici.note});
-    case 'verbose'
-        fields = fieldnames(indici);
-        ks_format = '';
-        for i_record = 1:length(fields)
-            field = fields{i_record};
-            val=record{indici.(field)};
-            vals{i_record}=val; %#ok<AGROW>
-            if ischar(val)
-                fmt_i = '%s';
-            else
-                fmt_i = '%f';
+if isempty(record)
+    % missing record!
+    msg = '';
+else
+    switch mode
+        case 'oneline'
+            default_place = uploader_conf('default_place');
+            nasc_info = prepare_event_info(record,indici.nasc_Nr,indici.nasc,indici.nasc_luo,default_place); % prepare info for birth
+            matr_info = prepare_event_info(record,indici.matr_Nr,indici.matr,NaN,default_place); % prepare info for marriage (marriage place is not recorded)
+            mort_info = prepare_event_info(record,indici.mort_Nr,indici.mort,indici.mort_luo,default_place); % prepare info for birth
+            msg = sprintf('%s) %s %s %s - b:%s,%s (%s, %s %s) - m:%s,%s (%s %s) - d:%s,%s - note: %s',...
+                record{indici.id_file},record{indici.nome},record{indici.nome_2},record{indici.cogn}, ...
+                nasc_info,record{indici.pad_nome},record{indici.mad_nome},record{indici.mad_cogn},...
+                matr_info,record{indici.con_nome},record{indici.con_cogn},...
+                mort_info,record{indici.note});
+        case 'verbose'
+            fields = fieldnames(indici);
+            ks_format = '';
+            for i_record = 1:length(fields)
+                field = fields{i_record};
+                val=record{indici.(field)};
+                vals{i_record}=val; %#ok<AGROW>
+                if ischar(val)
+                    fmt_i = '%s';
+                else
+                    fmt_i = '%f';
+                end
+                ks_format = [ks_format sprintf('%15s',field) ': ' fmt_i '\n']; %#ok<AGROW>
             end
-            ks_format = [ks_format sprintf('%15s',field) ': ' fmt_i '\n']; %#ok<AGROW>
-        end
-        msg = sprintf(ks_format,vals{:});
-    otherwise
-        error('Unknown format mode "%s"! Allowed modes are: {''oneline'',''verbose''}',mode)
+            msg = sprintf(ks_format,vals{:});
+        otherwise
+            error('Unknown format mode "%s"! Allowed modes are: {''oneline'',''verbose''}',mode)
+    end
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function event_info = prepare_event_info(record,ind_Nr,ind_date,ind_luo,default_place)
+% prepara la stringa con le info sull'evento nella forma "<event_Nr>,<event_date> [<event_place>]"
+% Se il luogo è uguale a default_place (luogo di defualt), non viene
+% visualizzato
+
+if ~isnan(ind_luo)
+    luo = record{ind_luo};
+else
+    luo = '';
+end
+
+if ( ~isempty(luo) && isempty(regexp(luo,default_place,'once')) )
+    event_info = sprintf('%s,%s [%s]',record{ind_Nr},record{ind_date},record{ind_luo});
+else
+    event_info = sprintf('%s,%s',record{ind_Nr},record{ind_date});
 end
 
 
