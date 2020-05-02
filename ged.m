@@ -935,7 +935,7 @@ for i=1:len_lista
         % special check for record number fields
         if flg_special_Nr(i)
             if ~strcmp(ks_numero,ks)
-                z = regexp(ks,'PARTE III? ([0-9]+)( [0-9]+)?','tokens'); % 'PARTE III 2 1895', 'PARTE II 2 1895', 'PARTE II 2' (same year of the date)
+                z = regexp(ks,'PARTE III? ([ABC] )?([0-9]+)( [0-9]+)?','tokens'); % 'PARTE II C 2 1911', 'PARTE III 2 1895', 'PARTE II 2 1895', 'PARTE II 2' (same year of the date)
                 if (~isempty(z))
                     ks_numero = ks;
                 end
