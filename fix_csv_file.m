@@ -31,7 +31,7 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-tag = 'file10_rc_20200313';
+tag = 'file10_rc_20200502';
 work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
 csvfile_dst     = [tag '_.csv'];    % proposed update, read only
@@ -803,7 +803,7 @@ for i_event=1:size(matr_ind,1)
                     try
                         temp_date2 = datenum(ks_date2,'dd/mm/yyyy');
                     catch %#ok<CTCH>
-                        error('Error in parsing date %s.',ks_date2)
+                        error('Error in reassembled date %s for id %s.',ks_date2,ks_id_i)
                     end
                     diff_day = num_date_i-temp_date2;
                     if abs(diff_day)<=5
