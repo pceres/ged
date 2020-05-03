@@ -2837,14 +2837,14 @@ function list_query = build_list_queries(str_search)
 list_query1 = {};
 
 % first name
-name_str = sprintf('%s %s',str_search.nome,str_search.cogn); % es. 'CARMINA CERES'
+name_str = sprintf('%s%%%s',str_search.nome,str_search.cogn); % es. 'CARMINA%CERES' (the % will match any intermediate string in the SQL LIKE statement, for example 'CARMINA "MENA" CERES')
 query_name = ['NAME=' name_str]; % Keywords: NAME, BIRTHDATE, DEATHDATE, BIRTHPLACE, DEATHPLACE, GENDER
 list_query1 = [list_query1 {query_name}];
 
 if ~isempty(str_search.nome_2)
     % second name
-    query_name = sprintf('NAME=%s %s %s',str_search.nome,str_search.nome_2,str_search.cogn); % Keywords: NAME, BIRTHDATE, DEATHDATE, BIRTHPLACE, DEATHPLACE, GENDER
-    list_query1 = [list_query1 {query_name}]; % es. {'NAME=ALFONSA ILARIA','NAME=ALFONSA MARIA ILARIA'}'
+    query_name = sprintf('NAME=%s%%%s%%%s',str_search.nome,str_search.nome_2,str_search.cogn); % Keywords: NAME, BIRTHDATE, DEATHDATE, BIRTHPLACE, DEATHPLACE, GENDER
+    list_query1 = [list_query1 {query_name}]; % es. {'NAME=ALFONSA%ILARIA','NAME=ALFONSA%MARIA%ILARIA'}'
 end
 
 
@@ -3058,16 +3058,16 @@ if ( (~flg_incompatible_birth) && (~flg_incompatible_death) && ( (fitness_birth<
         error(result_F.err_msg)
     else
         vett_parent_fit = zeros(1,0);
-        if ~isempty(cogn_p)
+        if ~isempty(cogn_p) && ~isempty(str_search.cogn)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.cogn,cogn_p)]; % string distance
         end
-        if ~isempty(result_F.pad_nome_to_be_checked)
+        if ~isempty(result_F.pad_nome_to_be_checked) && ~isempty(str_search.pad_nome)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.pad_nome,result_F.pad_nome_to_be_checked)]; % string distance
         end
-        if ~isempty(result_F.mad_nome_to_be_checked)
+        if ~isempty(result_F.mad_nome_to_be_checked) && ~isempty(str_search.mad_nome)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.mad_nome,result_F.mad_nome_to_be_checked)]; % string distance
         end
-        if ~isempty(result_F.mad_cogn_to_be_checked)
+        if ~isempty(result_F.mad_cogn_to_be_checked) && ~isempty(str_search.mad_cogn)
             vett_parent_fit = [vett_parent_fit ged('strfielddist',str_search.mad_cogn,result_F.mad_cogn_to_be_checked)]; % string distance
         end
         bonus = [1 1 1 5]*fitness_thr; % allow a bad match if at least three are good
