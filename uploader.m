@@ -2852,17 +2852,17 @@ list_query2 = {''};
 
 % only birth date
 if ~isnan(str_search.int_nasc_a)
-    query_ext = sprintf(' & BIRTHDATE=%d',str_search.int_nasc_a);
+    query_ext = sprintf('&BIRTHDATE=%d',str_search.int_nasc_a);
     list_query2 = [list_query2 {query_ext}];
 end
 % only death date
 if ~isnan(str_search.int_mort_a)
-    query_ext = sprintf(' & DEATHDATE=%d',str_search.int_mort_a);
+    query_ext = sprintf('&DEATHDATE=%d',str_search.int_mort_a);
     list_query2 = [list_query2 {query_ext}];
 end
 % both birth and death date
 if (~isnan(str_search.int_nasc_a) && ~isnan(str_search.int_mort_a))
-    query_ext = sprintf(' & BIRTHDATE=%d & DEATHDATE=%d',str_search.int_nasc_a,str_search.int_mort_a);
+    query_ext = sprintf('&BIRTHDATE=%d&DEATHDATE=%d',str_search.int_nasc_a,str_search.int_mort_a);
     list_query2 = [list_query2 {query_ext}];
 end
 
@@ -2883,10 +2883,10 @@ if (~isempty(str_search.nasc) && (sum(str_search.nasc=='/')==2) )
     list_query = [{query_add} list_query];
     
     % % checks on single name and surname could be very slow
-    %     query_add = sprintf('NAME=%s & BIRTHDATE=%s',str_search.nome,create_gedcom_date(str_search.nasc)); % only name (surname could be slightly different)
+    %     query_add = sprintf('NAME=%s&BIRTHDATE=%s',str_search.nome,create_gedcom_date(str_search.nasc)); % only name (surname could be slightly different)
     %     list_query = [{query_add} list_query];
     %
-    %     query_add = sprintf('NAME=%s & BIRTHDATE=%s',str_search.cogn,create_gedcom_date(str_search.nasc)); % only surname (name could be slightly different)
+    %     query_add = sprintf('NAME=%s&BIRTHDATE=%s',str_search.cogn,create_gedcom_date(str_search.nasc)); % only surname (name could be slightly different)
     %     list_query = [{query_add} list_query];
 end
 
