@@ -332,7 +332,7 @@ else
                         ks_num_i = num2str(num_i,['%0' num2str(length(ks_num1{1})) 'd']);
                         image_proposal = [z_image{1} ks_num_i z_image{2}];
                         fprintf(1,'\t--> %d) Big gap between %s (%s) and %s (%s)\n',i_num,ks1,image1,ks2,image2)
-                        fprintf(1,'\tdisp([''dd mmm yyyy'' sprintf(''\t'') repmat(sprintf(''\t\t - ''),1,%d) ''%s'']); !IMAGE=%s && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name $IMAGE.*) && echo $NAME && gimp $NAME &\n\n',i_copy-1,image_proposal,image_proposal)
+                        fprintf(1,'\tdisp([''dd mmm yyyy'' sprintf(''\t'') repmat(sprintf(''\t\t - ''),1,%d) ''%s'']); !LD_LIBRARY_PATH=;IMAGE=%s && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name $IMAGE.*) && echo $NAME && gwenview $NAME &\n\n',i_copy-1,image_proposal,image_proposal)
                     end
                     
                 end
@@ -782,7 +782,7 @@ end
 function open_image(image_name,verbose)
 
 % close image viewer
-[exit_code text]=system('ps -Al | grep gimp');
+[exit_code text]=system('ps -Al | grep gwenview');
 z = regexp(text,'[^\s]+','match');
 if ~isempty(z)
     pid = z{4};
@@ -791,11 +791,11 @@ if ~isempty(z)
 end
 
 % reopen with new image
-cmd = sprintf('\n\t!IMAGE="%s" && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name "$IMAGE*") && echo "$NAME" && gimp "$NAME" &',image_name);
+cmd = sprintf('\n\t!LD_LIBRARY_PATH=;IMAGE="%s" && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name "$IMAGE*") && echo "$NAME" && gwenview "$NAME" &',image_name);
 eval(cmd)
 
 if verbose
-    cmd = sprintf('\n\tIMAGE="%s" && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name "$IMAGE*") && echo "$NAME" && gwenview "$NAME" &',image_name);
+    cmd = sprintf('\n\tLD_LIBRARY_PATH=;IMAGE="%s" && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name "$IMAGE*") && echo "$NAME" && gwenview "$NAME" &',image_name);
     disp(cmd)
 end
 
@@ -868,7 +868,7 @@ for i_num = 1:length(v_num)
     ks_num_i = num2str(num_i,['%0' num2str(length(ks_num1{1})) 'd']);
     image_proposal = [z_image{1} ks_num_i z_image{2}];
     fprintf(1,'\t--> %d) Big gap between %s and %s\n',i_num,image1,image2)
-    fprintf(1,'\tdisp([''dd mmm yyyy'' sprintf(''\t'') repmat(sprintf(''\t\t - ''),1,%d) ''%s'']); !IMAGE=%s && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name $IMAGE.*) && echo $NAME && gimp $NAME &\n\n',num_copy-1,image_proposal,image_proposal)
+    fprintf(1,'\tdisp([''dd mmm yyyy'' sprintf(''\t'') repmat(sprintf(''\t\t - ''),1,%d) ''%s'']); !LD_LIBRARY_PATH=;IMAGE=%s && NAME=$(find /mnt/win_d/phpgedview/usbdisk_genealogia/ -name $IMAGE.*) && echo $NAME && gwenview $NAME &\n\n',num_copy-1,image_proposal,image_proposal)
     list_image_proposal{i_num} = image_proposal;
 end
 
