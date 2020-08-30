@@ -2973,6 +2973,10 @@ if ~isempty(childFamilies)
         ks_msg = sprintf('Warning! There are duplicated child families for PID %s:\n',PID);
         ks_msg = sprintf('%s%s\n',ks_msg,sprintf('%s,',childFamilies{:}));
         disp(childFamilies)
+        if strcmp(childFamilies{1},childFamilies{2})
+            % why are there two identical child families? please check
+            keyboard
+        end
         ks_msg = sprintf('%sPlease fix this manually on PhpGedView website, then continue\n',ks_msg);
         msgbox(ks_msg)
         childFamilies = unique(childFamilies);
