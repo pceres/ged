@@ -93,7 +93,6 @@
 %                                           to start new session)
 %       'prepare_pgv_url': prepare pgv website urls to individual, family
 %                          and children
-%                            record in the file
 %                   params={wsdl_url,PID,childFamilies,spouseFamilies}
 %                       wsdl_url      : url of the wsdl page (es.
 %                                       'http://localhost/work/PhpGedView/genservice.php?wsdl')
@@ -102,6 +101,18 @@
 %                                       site (es. 'F1601')
 %                       spouseFamilies: cell array of strings with FID  (spouse families) from pgv 
 %                                       site (es. {'F1601','F1614'})
+%       'normalize_string': normalize the string (for example 'Caposele'
+%                           --> 'Caposele, Avellino, Campania, ITA') depending on the string type 
+%                   params={ks,type}
+%                       ks   : string to be normalized (es. 'Caposele')
+%                       type : string type (es. PLAC (place), pgvu (user to
+%                              corresponding PGV user, src_txt (event to
+%                              corresponding source)
+%       'analise_record': analize the record and return a struct with
+%                         fields normalized for Gedcom format
+%                   params={str_archivio,id_record}
+%                       str_archivio  : archive struct, with fields:
+%                           id_record : numeric id of the record
 %
 % es.:
 %
@@ -140,6 +151,13 @@
 % % prepare pgv urls
 % result = uploader('prepare_pgv_links',{'http://localhost/work/PhpGedView/genservice.php?wsdl','I20','F1234',{'F601','F602'}});
 %
+% % normalize string
+% txt = uploader('normalize_string',{'CAPOSELE','PLAC'}); % --> 'Caposele, Avellino, Campania, ITA'
+%
+% % analize record
+% result = uploader('analyse_record',{str_archivio,56762})
+% result.str_record_info % struct with normalized Gedcom fields
+%
 %
 % gedcom_txt=sprintf('0 INDI @I7@\n1 CHAN\n'); % dummy gedcom record
 % result = uploader('create_individual_with_gedcom',{struct('wsdl_url',wsdl_url,'SID',''),gedcom_txt});
@@ -173,7 +191,13 @@ switch action
         
     case 'prepare_pgv_links'
         result = prepare_pgv_links(params);
-
+        
+    case 'normalize_string'
+        result = export_normalize_string(params);
+        
+    case 'analyse_record'
+        result = analyse_record(params);
+        
     otherwise
         error('Unknown action "%s"!',action)
 end
@@ -229,8 +253,10 @@ if isempty(ind_record)
     error('Record ''%d'' not found in the archive!',id_record)
 end
 
+result_tmp = analyse_record({str_archivio,id_record});
+str_record_info = result_tmp.str_record_info;
 PID = getNewXref(class_instance,SID,'INDI'); % PID of individual to be created
-gedcom_txt = prepare_gedcom_str(str_archivio,ind_record,PID,famc,fams);
+gedcom_txt = prepare_gedcom_str(str_record_info,PID,famc,fams);
 
 result_tmp = uploader('create_individual_with_gedcom',{struct('wsdl_url',wsdl_url,'SID',SID),gedcom_txt});
 
@@ -291,6 +317,7 @@ else
     
     % add new individual gedcom
     result      = PhpGedViewSoapInterface('appendRecord',{class_instance,SID,gedcom_txt}); % do PGV SOAP request
+    pause(3) % this pause is necessary to avoid ending up with an empty person in PGV
     if (result.err_code > 0)
         err_code     = result.err_code;
         err_msg      = result.err_msg;
@@ -345,7 +372,7 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function gedcom_txt = prepare_gedcom_str(str_archivio,ind_record,PID,famc,fams)
+function gedcom_txt = prepare_gedcom_str(str_record_info,PID,famc,fams)
 % assemble gedcom text to be uploaded starting from one line, for example (lines will be 
 % converted into one single multiline string):
 %
@@ -386,86 +413,22 @@ function gedcom_txt = prepare_gedcom_str(str_archivio,ind_record,PID,famc,fams)
 %     };
 %
 
-record = str_archivio.archivio(ind_record,:);
 
-i_cogn      = str_archivio.indici_arc.cogn;
-i_nome      = str_archivio.indici_arc.nome;
-i_nome_2    = str_archivio.indici_arc.nome_2;
-i_nasc      = str_archivio.indici_arc.nasc;
-i_mort      = str_archivio.indici_arc.mort;
-i_int_nasc_a  = str_archivio.indici_arc.int_nasc_a;
-i_int_mort_a  = str_archivio.indici_arc.int_mort_a;
-i_nasc_Nr   = str_archivio.indici_arc.nasc_Nr;  % atto di nascita Num. (anagrafe)
-i_mort_Nr   = str_archivio.indici_arc.mort_Nr;  % atto di morte Num. (anagrafe)
-i_nasc_luo  = str_archivio.indici_arc.nasc_luo;  % luogo di nascita
-i_mort_luo  = str_archivio.indici_arc.mort_luo;  % luogo di morte
-
-ks_cogn     = record{i_cogn};
-ks_nome     = record{i_nome};
-ks_nome2    = record{i_nome_2};
-ks_nasc_    = record{i_nasc};
-ks_mort_    = record{i_mort};
-int_nasc_a  = record{i_int_nasc_a};
-int_mort_a  = record{i_int_mort_a};
-ks_nasc_Nr  = record{i_nasc_Nr};
-ks_mort_Nr  = record{i_mort_Nr};
-ks_nasc_luo_= record{i_nasc_luo};
-ks_mort_luo_= record{i_mort_luo};
-
-% prepare full name
-[ks_givn ks_surn] = prepare_gedcom_name_fields(ks_cogn,ks_nome,ks_nome2);
-
-% prepare sex ( 'M'; % 'M' or 'F', or empty if undefined)
-sex = ged('determine_sex',ks_givn);
-
-% prepare birth date ('06/01/1859' -->'06 JAN 1869')
-if ~isempty(ks_nasc_)
-    if regexp(ks_nasc_,'^[12][6789][0-9][0-9]$')
-        % single year: add ABT
-        ks_nasc = ['ABT ' ks_nasc_];
-    else
-        ks_nasc = upper(datestr(datestr_to_datenum(ks_nasc_),'dd mmm yyyy'));
-    end
-else
-    ks_nasc = '';
-end
-
-% prepare death date ('06/01/1859' --> '06 JAN 1869' or '1896' --> '1896')
-if ~isempty(ks_mort_)
-    if ~isempty(regexp(ks_mort_,'^1[0-9]{3,3}$', 'once'))
-        % only year
-        ks_mort = ks_mort_;
-    else
-        % full date
-        ks_mort = upper(datestr(datenum(ks_mort_,'dd/mm/yyyy'),'dd mmm yyyy'));
-    end
-else
-    % no date
-    ks_mort = '';
-end
-
-% prepare birth place ('CAPOSELE' -->'Caposele, Avellino, Campania, ITA')
-if ~isempty(ks_nasc_luo_)
-    ks_nasc_luo = normalize_string(ks_nasc_luo_,'PLAC');
-else
-    ks_nasc_luo = '';
-end
-
-% prepare death place ('CAPOSELE' -->'Caposele, Avellino, Campania, ITA')
-if ~isempty(ks_mort_luo_)
-    ks_mort_luo = normalize_string(ks_mort_luo_,'PLAC');
-else
-    ks_mort_luo = '';
-end
-
-% prepare chan date and time
-ks_chan_date = upper(datestr(now,'dd mmm yyyy'));
-ks_chan_time = upper(datestr(now,'HH:MM:SS'));
-ks_chan_user = uploader_conf('pgv_username');
-
-
-% source id associated to the archive (es. '@S16@')
-ks_SID = uploader_conf('source_ged');
+ks_givn         = str_record_info. ks_givn;
+ks_surn         = str_record_info. ks_surn;
+sex             = str_record_info. sex;
+ks_nasc         = str_record_info. ks_nasc;
+ks_nasc_luo     = str_record_info. ks_nasc_luo;
+ks_nasc_Nr      = str_record_info. ks_nasc_Nr;
+int_nasc_a      = str_record_info. int_nasc_a;
+ks_mort         = str_record_info. ks_mort;
+ks_mort_luo     = str_record_info. ks_mort_luo;
+ks_mort_Nr      = str_record_info. ks_mort_Nr;
+int_mort_a      = str_record_info. int_mort_a;
+ks_chan_date    = str_record_info. ks_chan_date;
+ks_chan_time    = str_record_info. ks_chan_time;
+ks_chan_user    = str_record_info. ks_chan_user;
+ks_SID          = str_record_info. ks_SID;
 
 
 %
@@ -651,6 +614,7 @@ for i_link = 1:size(matr_fam_changed,1)
     
     % add link to the family
     result_tmp  = PhpGedViewSoapInterface('updateRecord',{class_instance,SID,link_FID,gedcom_fam_txt});
+    pause(3) % this pause is important to let the asynchronous processes to complete on the remote server (otherwise the previous PID's added to the family could be lost)
     if (result_tmp.err_code>0)
         err_code = result_tmp.err_code;
         err_msg  = result_tmp.err_msg;
@@ -1281,6 +1245,7 @@ switch chng_status
             set_status = 'skipped'; % archive for future analisys
         else
             result_upl      = PhpGedViewSoapInterface('updateRecord',{class_instance,SID,RID,gedcom_new}); % actual update
+            pause(3) % this pause is necessary to avoid ending up with an empty person in PGV
             fprintf(1,'\tUpdated gedcom id %s with result: %s\n',RID,result_upl.result_out)
             set_status = 'archived'; % archive update proposal
         end
@@ -3360,6 +3325,18 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ks_new = export_normalize_string(params,type)
+
+% manage input params
+par_struct = assert(params,{'ks','type'});
+ks   = par_struct.ks;
+type = par_struct.type;
+
+ks_new = normalize_string(ks,type); % normalized place of the event
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function date_num = datestr_to_datenum(date_str)
 % convert a string date into a Matlab date number
 
@@ -3384,3 +3361,204 @@ elseif regexp(date_str,'[0-9]{4,4}')
 else
     error(date_str)
 end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function result = analyse_record(params)
+% analyse record fields, normalizing their content and preparing to Gedcom
+% format.
+% id_record is a numeric id
+%
+% example of Gedcom format:
+% gedcom_lines = {
+%     '0 @I6769@ INDI'
+%     
+%     '1 NAME Francesco /Ceres/'
+%     '2 GIVN Francesco'
+%     '2 SURN Ceres'
+%     
+%     '1 SEX M'
+%     
+%     '1 BIRT'
+%     '2 DATE 28 NOV 1857'
+%     '2 PLAC Caposele, Avellino, Campania, ITA'
+%     '2 SOUR @S16@'
+%     '3 PAGE 1857: 188'
+%     '3 DATA'
+%     '4 TEXT registro nati anagrafe Caposele'
+%     
+%     '1 DEAT'
+%     '2 DATE 08 DEC 1862'
+%     '2 PLAC Caposele, Avellino, Campania, ITA'
+%     '2 SOUR @S16@'
+%     '3 PAGE 1862: 135'
+%     '3 DATA'
+%     '4 TEXT registro morti anagrafe Caposele'
+%     
+%     '1 FAMC @F746@'
+%     
+%     '1 FAMS @F1118@'
+%     '1 FAMS @F372@'
+%     
+%     '1 CHAN'
+%     '2 DATE 14 FEB 2012'
+%     '3 TIME 00:19:55'
+%     '2 _PGVU uploader'
+%     };
+%
+
+
+result = struct();
+err_code    = 0;
+err_msg     = '';
+
+% manage input params
+par_struct = assert(params,{'str_archivio','id_record'});
+str_archivio = par_struct.str_archivio;
+id_record    = par_struct.id_record; % id of record from file to be uploaded    
+
+ind_record = strmatch(num2str(id_record),str_archivio.archivio(:,1),'exact');
+if isempty(ind_record)
+    error('Record ''%d'' not found in the archive!',id_record)
+end
+
+record = str_archivio.archivio(ind_record,:);
+
+i_cogn      = str_archivio.indici_arc.cogn;
+i_nome      = str_archivio.indici_arc.nome;
+i_nome_2    = str_archivio.indici_arc.nome_2;
+i_nasc      = str_archivio.indici_arc.nasc;
+i_matr      = str_archivio.indici_arc.matr;
+i_mort      = str_archivio.indici_arc.mort;
+i_int_nasc_a  = str_archivio.indici_arc.int_nasc_a;
+i_int_matr_a  = str_archivio.indici_arc.int_matr_a;
+i_int_mort_a  = str_archivio.indici_arc.int_mort_a;
+i_nasc_Nr   = str_archivio.indici_arc.nasc_Nr;   % atto di nascita Num. (anagrafe)
+i_matr_Nr   = str_archivio.indici_arc.matr_Nr;   % atto di matrimonio Num. (anagrafe)
+i_mort_Nr   = str_archivio.indici_arc.mort_Nr;   % atto di morte Num. (anagrafe)
+i_nasc_luo  = str_archivio.indici_arc.nasc_luo;  % luogo di nascita
+%i_matr_luo  = str_archivio.indici_arc.matr_luo; % luogo di matrimonio (il campo non esiste nel file)
+i_mort_luo  = str_archivio.indici_arc.mort_luo;  % luogo di morte
+i_note      = str_archivio.indici_arc.note;      % note aggiuntive (es. matrimonio non a Caposele)
+
+ks_cogn     = record{i_cogn};
+ks_nome     = record{i_nome};
+ks_nome2    = record{i_nome_2};
+ks_nasc_    = record{i_nasc};
+ks_matr_    = record{i_matr};
+ks_mort_    = record{i_mort};
+int_nasc_a  = record{i_int_nasc_a};
+int_matr_a  = record{i_int_matr_a};
+int_mort_a  = record{i_int_mort_a};
+ks_nasc_Nr  = record{i_nasc_Nr};
+ks_matr_Nr  = record{i_matr_Nr};
+ks_mort_Nr  = record{i_mort_Nr};
+ks_nasc_luo_= record{i_nasc_luo};
+%ks_matr_luo_= record{i_matr_luo};
+ks_mort_luo_= record{i_mort_luo};
+ks_note     = record{i_note};
+
+% prepare full name
+[ks_givn ks_surn] = prepare_gedcom_name_fields(ks_cogn,ks_nome,ks_nome2);
+
+% prepare sex ( 'M'; % 'M' or 'F', or empty if undefined)
+sex = ged('determine_sex',ks_givn);
+
+% prepare birth date ('06/01/1859' -->'06 JAN 1869')
+if ~isempty(ks_nasc_)
+    if regexp(ks_nasc_,'^[12][6789][0-9][0-9]$', 'once')
+        % single year: add ABT
+        ks_nasc = ['ABT ' ks_nasc_];
+    else
+        ks_nasc = upper(datestr(datestr_to_datenum(ks_nasc_),'dd mmm yyyy'));
+    end
+else
+    ks_nasc = '';
+end
+
+% prepare marriage date ('06/01/1859' -->'06 JAN 1869')
+if ~isempty(ks_matr_)
+    if regexp(ks_matr_,'^[12][6789][0-9][0-9]$', 'once')
+        % single year: add ABT
+        ks_matr = ['ABT ' ks_matr_];
+    else
+        ks_matr = upper(datestr(datestr_to_datenum(ks_matr_),'dd mmm yyyy'));
+    end
+else
+    ks_matr = '';
+end
+
+% prepare death date ('06/01/1859' --> '06 JAN 1869' or '1896' --> '1896')
+if ~isempty(ks_mort_)
+    if ~isempty(regexp(ks_mort_,'^[12][6789][0-9][0-9]$', 'once'))
+        % only year
+        ks_mort = ks_mort_;
+    else
+        % full date
+        ks_mort = upper(datestr(datenum(ks_mort_,'dd/mm/yyyy'),'dd mmm yyyy'));
+    end
+else
+    % no date
+    ks_mort = '';
+end
+
+% prepare birth place ('CAPOSELE' -->'Caposele, Avellino, Campania, ITA')
+if ~isempty(ks_nasc_luo_)
+    ks_nasc_luo = normalize_string(ks_nasc_luo_,'PLAC');
+else
+    ks_nasc_luo = '';
+end
+
+% prepare marriage place ('CAPOSELE' -->'Caposele, Avellino, Campania, ITA')
+if ~isempty(ks_matr_) && isempty(ks_note)
+    ks_matr_luo = normalize_string(ks_matr_luo_,'PLAC');
+else
+    fprintf(1,'Lascio il lugo di matrimonio vuoto perché ci sono delle note. Verifica:\n\t%s\n',ks_note);
+    ks_matr_luo = '';
+end
+
+% prepare death place ('CAPOSELE' -->'Caposele, Avellino, Campania, ITA')
+if ~isempty(ks_mort_luo_)
+    ks_mort_luo = normalize_string(ks_mort_luo_,'PLAC');
+else
+    ks_mort_luo = '';
+end
+
+% prepare chan date and time
+ks_chan_date = upper(datestr(now,'dd mmm yyyy'));
+ks_chan_time = upper(datestr(now,'HH:MM:SS'));
+ks_chan_user = uploader_conf('pgv_username');
+
+
+% source id associated to the archive (es. '@S16@')
+ks_SID = uploader_conf('source_ged');
+
+
+%
+% prepare info struct
+%
+str_record_info = struct();
+str_record_info.ks_givn = ks_givn;
+str_record_info.ks_surn = ks_surn;
+str_record_info.sex = sex;
+str_record_info.ks_nasc = ks_nasc;
+str_record_info.ks_nasc_luo = ks_nasc_luo;
+str_record_info.ks_nasc_Nr = ks_nasc_Nr;
+str_record_info.int_nasc_a = int_nasc_a;
+str_record_info.ks_matr = ks_matr;
+str_record_info.ks_matr_luo = ks_matr_luo;
+str_record_info.ks_matr_Nr = ks_matr_Nr;
+str_record_info.int_matr_a = int_matr_a;
+str_record_info.ks_mort = ks_mort;
+str_record_info.ks_mort_luo = ks_mort_luo;
+str_record_info.ks_mort_Nr = ks_mort_Nr;
+str_record_info.int_mort_a = int_mort_a;
+str_record_info.ks_chan_date = ks_chan_date;
+str_record_info.ks_chan_time = ks_chan_time;
+str_record_info.ks_chan_user = ks_chan_user;
+str_record_info.ks_SID = ks_SID;
+
+result.err_code         = err_code;
+result.err_msg          = err_msg;
+result.str_record_info  = str_record_info;
