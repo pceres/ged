@@ -178,7 +178,7 @@ end
 
 ind = zeros(size(matr_source,1),1);
 
-colori = {'.','o'};
+colori = {'.','o','x'};
 for i_tag = 1:length(filter_tags)
     tag_i = filter_tags{i_tag};
     ind = ind | strcmp(matr_source(:,3),tag_i);
@@ -196,6 +196,7 @@ for i_blk = 1:length(ind)
     matr_source_i = matr_source(ind(i_blk),:);
     
     datenum_blk = range_analysis(matr_source_i);
+    %disp(sprintf('%3d: %s',length(datenum_blk),matr_source_i{1}))
     
     if isempty(datenum_blk)
         %disp(matr_source_i{end})
