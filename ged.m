@@ -1660,9 +1660,11 @@ if isempty(regexp(ks_givn,pattern_undefined, 'once'))
                 sex = 'M';
             otherwise
                 sex = 'M';
+                flag_undefined = 1;
                 list_e_female = {
                     '^CAISER$'
                     '^ESTER$'
+                    '^INES$'
                     'JUDITH$'
                     'L(I|EO)NOR$' % ELINOR
                     '^LILLIAN$'
@@ -1671,12 +1673,15 @@ if isempty(regexp(ks_givn,pattern_undefined, 'once'))
                 for i_pat=1:length(list_e_female)
                     pat = list_e_female{i_pat};
                     if ~isempty(regexp(nome,pat,'once'))
+                        flag_undefined = 0;
                         sex = 'F';
                     end
                 end
                 
-                fprintf(1,'Not sure about sex for name "%s", assuming "%s"\n',ks_givn,sex)
-                pause(2)
+                if flag_undefined
+                    fprintf(1,'Not sure about sex for name "%s", assuming "%s"\n',ks_givn,sex)
+                    pause(2)
+                end
         end
     end
 end
