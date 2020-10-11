@@ -3515,8 +3515,10 @@ if ~isempty(ks_matr_) && isempty(ks_note)
     ks_matr_luo_ = 'CAPOSELE'; % default marriage place
     ks_matr_luo = normalize_string(ks_matr_luo_,'PLAC');
 else
-    fprintf(1,'Lascio il luogo di matrimonio vuoto perché ci sono delle note. Verifica:\n\t%s\n',ks_note);
     ks_matr_luo = '';
+    if ~isempty(ks_matr_)
+        fprintf(1,'Lascio il luogo di matrimonio vuoto perché ci sono delle note. Verifica:\n\t%s\n',ks_note);
+    end
 end
 
 % prepare death place ('CAPOSELE' -->'Caposele, Avellino, Campania, ITA')

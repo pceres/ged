@@ -27,6 +27,7 @@ switch tag
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
             'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
             'FRANCIA'               , 'Francia';
+            'LIONI'                 , 'Lioni, Avellino, Campania, ITA';
             'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA';
             'NEWARK'                , 'Newark, Essex, New Jersey, USA';
             'NAPOLI'                , 'Napoli, Napoli, Campania, ITA';

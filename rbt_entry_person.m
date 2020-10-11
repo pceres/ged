@@ -51,52 +51,79 @@ kx = 0.35; % don't take start of edit field to avoid text already present
 ky = 0.894;
 tgt = [1.0000    1.0000    0.9922]; % white color for edit field
 thr = 1e-3;
-flg_is_married = check_pixel(robot,kx,ky,tgt,thr); % is the third edit field present?
+flg_ask = 0;
+flg_is_married = check_pixel(robot,kx,ky,tgt,thr,flg_ask); % is the third edit field present?
 
 
 %%
-kx = 0.1; % don't take start of edit field to avoid text already present
-ky = 0.24;
-tgt = [0.7098    0.7529    0.8706]; % white color for edit field
+flg_ask = 1;
+
+kx = 0.26; % check for the Antenati (Ancestor) field
+ky = 0.235;
+tgt = [0.8431    0.8353    0.8392]; % grey color for Ancestor popup list
 thr = 1e-3;
-flg_is_blue = check_pixel(robot,kx,ky,tgt,thr);
+flg_is_grey = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
+if flg_is_grey
+    flg_ancestor = 1;
+    disp('Found Ancestor field.')
+    dky_ancestor = 0.028;
+else
+    flg_ancestor = 0;
+    dky_ancestor = 0;
+end
+disp('todo!!!')
 
 kx = 0.1; % don't take start of edit field to avoid text already present
-ky = 0.27;
+ky = 0.24+dky_ancestor;
+tgt = [0.7098    0.7529    0.8706]; % white color for edit field
+thr =  0.05; % threshold has to be a little greater
+flg_is_blue = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
+
+kx = 0.1; % don't take start of edit field to avoid text already present
+ky = 0.27+dky_ancestor;
 tgt = [0.8196    0.8510    0.9333]; % white color for edit field
-thr = 1e-3;
-flg_is_light_blue = check_pixel(robot,kx,ky,tgt,thr);
+thr =  0.05; % threshold has to be a little greater
+flg_is_light_blue = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
 
 kx = 0.26; % don't take start of edit field to avoid text already present
-ky = 0.27;
+ky = 0.27+dky_ancestor;
 tgt = [0.9333    0.9137    0.6471]; % white color for edit field
 thr = 0.05; % threshold has to be a little greater
-flg_is_yellow = check_pixel(robot,kx,ky,tgt,thr);
+flg_is_yellow = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
 
 if flg_is_blue && flg_is_light_blue && flg_is_yellow
     %compatible with entry for person, may proceed...
     
     %%
+    if flg_ancestor
+        str_sex.kx = 0.26;
+        str_sex.ky = 0.235;
+        str_sex.dky = 0.014;
+        str_sex.n = 2; % Nascita (Birth)
+        select_item(robot,str_sex.kx,str_sex.ky,str_sex.dky,str_sex.n);
+    end
+    
+    %%
     str_nome.kx  = 0.26;
-    str_nome.ky  = 0.296;
+    str_nome.ky  = 0.296+dky_ancestor;
     str_nome.txt = str.name;
     edit_field(robot,str_nome.kx,str_nome.ky,str_nome.txt)
     
     %%
     str_cogn.kx  = 0.26;
-    str_cogn.ky  = 0.36;
+    str_cogn.ky  = 0.36+dky_ancestor;
     str_cogn.txt = str.surname;
     edit_field(robot,str_cogn.kx,str_cogn.ky,str_cogn.txt)
     
     %%
     str_nick.kx  = 0.26;
-    str_nick.ky  = 0.424;
+    str_nick.ky  = 0.424+dky_ancestor;
     str_nick.txt = str.nickname;
     edit_field(robot,str_nick.kx,str_nick.ky,str_nick.txt)
     
     %%
     str_sex.kx = 0.26;
-    str_sex.ky = 0.58;
+    str_sex.ky = 0.58+dky_ancestor;
     str_sex.dky = 0.014;
     str_sex.n = str.sex;
     select_item(robot,str_sex.kx,str_sex.ky,str_sex.dky,str_sex.n);
@@ -105,13 +132,13 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %% first group (birth)
     str_birth_date.kx  = 0.26;
-    str_birth_date.ky  = 0.638;
+    str_birth_date.ky  = 0.638+dky_ancestor;
     str_birth_date.txt = str.birth_date;
     edit_field(robot,str_birth_date.kx,str_birth_date.ky,str_birth_date.txt)
     
     %%
     str_birth_place.kx  = 0.26;
-    str_birth_place.ky  = 0.68;
+    str_birth_place.ky  = 0.68+dky_ancestor;
     str_birth_place.txt = str.birth_place;
     edit_field(robot,str_birth_place.kx,str_birth_place.ky,str_birth_place.txt)
     
@@ -131,22 +158,22 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
         
     %% second group (marriage or death)
     str_2nd_date.kx  = 0.26;
-    str_2nd_date.ky  = 0.766;
+    str_2nd_date.ky  = 0.766+dky_ancestor;
     edit_field(robot,str_2nd_date.kx,str_2nd_date.ky,str_2nd_date.txt)
     
     %%
     str_2nd_place.kx  = 0.26;
-    str_2nd_place.ky  = 0.805;
+    str_2nd_place.ky  = 0.805+dky_ancestor;
     edit_field(robot,str_2nd_place.kx,str_2nd_place.ky,str_2nd_place.txt)
     
     %% third group (death)
     str_death_date.kx  = 0.26;
-    str_death_date.ky  = 0.894;
+    str_death_date.ky  = 0.894+dky_ancestor;
     edit_field(robot,str_death_date.kx,str_death_date.ky,str_death_date.txt)
     
     %%
     str_death_place.kx  = 0.26;
-    str_death_place.ky  = 0.934;
+    str_death_place.ky  = 0.934+dky_ancestor;
     edit_field(robot,str_death_place.kx,str_death_place.ky,str_death_place.txt)
     
     
@@ -157,12 +184,15 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
     height = screenSize(4);
     
     str_form.kx  = 0.16;
-    str_form.ky  = 0.934;
+    str_form.ky  = 0.934+dky_ancestor;
     robot_wrapper('mouse_move',{robot,width*str_form.kx, height*str_form.ky});
     
     robot_wrapper('mouse_click',{robot,'left'});
     robot_wrapper('key_press',{robot,'{END}'}); % move to the end of page
     pause(0.3)
+    
+    % since here we are at the end of page, so the Ancestor offset
+    % dky_ancestor must be no longer used
     
     %%
     str_src_link.kx  = 0.04;
@@ -189,6 +219,12 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
     %robot_wrapper('mouse_click',{robot,'left'});
     
 else
+    imgfile = 'temp.jpg';
+    robot_wrapper('save_snapshot',{robot,imgfile});
+    img=imread(imgfile);
+    image(img);
+    
+    fprintf(1,'flg_is_blue=%d\nflg_is_light_blue=%d\nflg_is_yellow=%d\n',flg_is_blue,flg_is_light_blue,flg_is_yellow);
     error('incompatible with PGV entry form for a person')
 end
 
@@ -235,7 +271,7 @@ robot_wrapper('key_press',{robot,txt}); % type the text
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [flg_in_target color] = check_pixel(robot,kx,ky,tgt,thr)
+function [flg_in_target color] = check_pixel(robot,kx,ky,tgt,thr,flg_ask)
 
 imgfile = 'temp.jpg';
 
@@ -263,7 +299,9 @@ if err < thr
     flg_in_target = 1;
 else
     flg_in_target = 0;
-    fprintf(1,'err=%f\n',err);
-    disp(color);
-    input('Should I stop here? Enter to go on, Ctrl-C to stop')
+    if flg_ask
+        fprintf(1,'err=%f\n',err);
+        disp(color);
+        input('Should I stop here? Enter to go on, Ctrl-C to stop')
+    end
 end
