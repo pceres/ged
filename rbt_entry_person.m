@@ -16,6 +16,7 @@ else
     
     %%
     str.name        = str_record_info.ks_givn;
+    str.prefix_surname = str_record_info.ks_prefix_surn;
     str.surname     = str_record_info.ks_surn;
     str.nickname    = ''; % no nickname recorded in file
     str.sex         = strmatch(str_record_info.sex,{'M','F',''},'exact'); % 1 --> M; 2 --> F; 3 --> Unknown
@@ -34,6 +35,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function enter_data(str)
 % str.name        = 'Nome';
+% str.prefix_surname = 'Prefisso del cognome' % es. DEL, DI, DELLA
 % str.surname     = 'Cognome';
 % str.nickname    = 'Soprannome';
 % str.sex         = 1; % 1 --> M; 2 --> F; 3 --> Unknown
@@ -94,7 +96,7 @@ flg_is_yellow = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
 if flg_is_blue && flg_is_light_blue && flg_is_yellow
     %compatible with entry for person, may proceed...
     
-    %%
+    %% ancestor (nascita, adozione, etc.)
     if flg_ancestor
         str_sex.kx = 0.26;
         str_sex.ky = 0.235;
@@ -103,13 +105,19 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
         select_item(robot,str_sex.kx,str_sex.ky,str_sex.dky,str_sex.n);
     end
     
-    %%
+    %% name
     str_nome.kx  = 0.26;
     str_nome.ky  = 0.296+dky_ancestor;
     str_nome.txt = str.name;
     edit_field(robot,str_nome.kx,str_nome.ky,str_nome.txt)
     
-    %%
+    %% surname prefix (DEL, DI, es. DEL VECCHIO --> DEL)
+    str_prefix_cogn.kx  = 0.26;
+    str_prefix_cogn.ky  = 0.325+dky_ancestor;
+    str_prefix_cogn.txt = str.prefix_surname;
+    edit_field(robot,str_prefix_cogn.kx,str_prefix_cogn.ky,str_prefix_cogn.txt)
+    
+    %% surname (without prefix, es. DEL VECCHIO --> VECCHIO)
     str_cogn.kx  = 0.26;
     str_cogn.ky  = 0.36+dky_ancestor;
     str_cogn.txt = str.surname;
@@ -241,7 +249,7 @@ robot_wrapper('mouse_move',{robot,width*kx, height*ky});
 
 
 robot_wrapper('mouse_click',{robot,'left'});
-%pause(0.03)
+pause(0.03)
 
 robot_wrapper('mouse_move',{robot,width*kx, height*(ky+n*dky)});
 robot_wrapper('mouse_click',{robot,'left'});

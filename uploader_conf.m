@@ -22,6 +22,7 @@ switch tag
         % Takes a string, and returns the canonical form of the place, if matching
         % eg.: 'Caposele' --> 'Caposele, Avellino, Campania, ITA'
         result = {
+            'BAGNOLI'               , 'Bagnoli Irpino, Avellino, Campania, ITA';
             'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
             'BUCCINO'               , 'Buccino, Salerno, Campania, ITA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
@@ -35,6 +36,7 @@ switch tag
             'NOCERA( INFERIORE)?'   , 'Nocera Inferiore, Salerno, Campania, ITA';
             '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
+            'SANT.ANGELO DEI LOMBARDI'  , 'Sant''Angelo dei Lombardi, Avellino, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
             'UDINE'                 , 'Udine, Udine, Friuli Venezia Giulia, ITA';
             'TEORA'                 , 'Teora, Avellino, Campania, ITA';

@@ -570,7 +570,7 @@ gedcom_txt = gedcom_txt(1:end-1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [ks_givn ks_surn] = prepare_gedcom_name_fields(ks_cogn,ks_nome,ks_nome2)
+function [ks_givn ks_prefix_surn ks_surn] = prepare_gedcom_name_fields(ks_cogn,ks_nome,ks_nome2)
 
 if ~isempty(ks_nome2)
     ks_givn = [ks_nome ' ' ks_nome2]; % merge first name (ks_nome) and additional names (ks_nome2)
@@ -578,8 +578,20 @@ else
     ks_givn = ks_nome;
 end
 
-ks_givn = only_first_uppercase(ks_givn);
-ks_surn = only_first_uppercase(ks_cogn);
+ind_space = find(ks_cogn==' ');
+if ind_space<=6
+    % prefix detected (es. 'DEL VECCHIO')
+    ks_prefix_surn = ks_cogn(1:ind_space-1);    % es. 'DEL'
+    ks_surn = ks_cogn(ind_space+1:end);         % es. 'VECCHIO'
+else
+    % single surname
+    ks_prefix_surn = '';
+    ks_surn = ks_cogn;
+end
+
+ks_givn         = only_first_uppercase(ks_givn);
+ks_prefix_surn  = only_first_uppercase(ks_prefix_surn);
+ks_surn         = only_first_uppercase(ks_surn);
 
 
 
@@ -3460,7 +3472,7 @@ ks_mort_luo_= record{i_mort_luo};
 ks_note     = record{i_note};
 
 % prepare full name
-[ks_givn ks_surn] = prepare_gedcom_name_fields(ks_cogn,ks_nome,ks_nome2);
+[ks_givn ks_prefix_surn ks_surn] = prepare_gedcom_name_fields(ks_cogn,ks_nome,ks_nome2);
 
 % prepare sex ( 'M'; % 'M' or 'F', or empty if undefined)
 sex = ged('determine_sex',ks_givn);
@@ -3543,6 +3555,7 @@ ks_SID = uploader_conf('source_ged');
 %
 str_record_info = struct();
 str_record_info.ks_givn = ks_givn;
+str_record_info.ks_prefix_surn = ks_prefix_surn;
 str_record_info.ks_surn = ks_surn;
 str_record_info.sex = sex;
 str_record_info.ks_nasc = ks_nasc;
