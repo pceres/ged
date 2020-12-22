@@ -37,6 +37,8 @@ switch tag
             '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'SANT.ANGELO DEI LOMBARDI'  , 'Sant''Angelo dei Lombardi, Avellino, Campania, ITA';
+            'SAN(TO)? MENNA'  , 'Santomenna, Salerno, Campania, ITA'; % for 'SAN MENNA' e 'SANTO MENNA'
+            'SOLOFRA'               , 'Solofra, Salerno, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
             'UDINE'                 , 'Udine, Udine, Friuli Venezia Giulia, ITA';
             'TEORA'                 , 'Teora, Avellino, Campania, ITA';
