@@ -31,7 +31,7 @@ if ~ismember(enable_write,[0,1])
     error('enable_write must be either 0 or 1')
 end
 
-tag = 'file10_rc_20200502';
+tag = 'file10_rc_20200927';
 work_folder     = ['archivio/file10/' tag '_/'];
 csvfile_src     = 'file10.csv.ok';              % best in class, official file
 csvfile_dst     = [tag '_.csv'];    % proposed update, read only
@@ -762,7 +762,7 @@ for i_event=1:size(matr_ind,1)
             elseif isequal(ks_date2,'00/00/')
                 % detect dates with sure days\months (where month and days
                 % cannot be changed, as day is greater than 12)
-                if ~isempty(regexp(ks_date_i,'[0-9]{2,2}/[0-9]{2,2}/[0-9]{4,4}', 'once')) && ~isequal(ks_date_i,datestr(datevec(ks_date_i,'mm/dd/yyyy'),'mm/dd/yyyy'))
+                if ~isempty(regexp(ks_date_i,'[0-9]{2,2}/[0-9]{2,2}/[0-9]{4,4}', 'once')) && isempty(regexp(ks_date_i,'[^0-9/]', 'once')) && ~isequal(ks_date_i,datestr(datevec(ks_date_i,'mm/dd/yyyy'),'mm/dd/yyyy'))
                     vett = datevec(ks_date_i,'dd/mm/yyyy');
                     table_fix(ind_i,[ind_year ind_month ind_day ind_datenum])={num2str(vett(1)) num2str(vett(2)) num2str(vett(3)) num2str(((vett(3)-1)/31+vett(2)-1)/12+vett(1),'%.4f')};
                     flg_fixed = 1;

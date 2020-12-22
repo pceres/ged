@@ -42,6 +42,8 @@ switch tag
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
             'UDINE'                 , 'Udine, Udine, Friuli Venezia Giulia, ITA';
             'TEORA'                 , 'Teora, Avellino, Campania, ITA';
+            'TRIPOLI'               , 'Tripoli, 10, Greater Tripoli, LBY';
+            'VALVA'                 , 'Valva, Salerno, Campania, ITA';
             };
 
     case 'list_conversion_table.pgvu'
@@ -100,6 +102,12 @@ switch tag
         % Used by 
         % Name of the gedcom to be updated on the pgv site
         result = '<your_gedcom>';
+        
+    case 'default_place'
+        % Used by record2msg
+        % Default place (regexp format). In case of different place, it
+        % will be shown
+        result = 'CAPOSELE';
         
     case 'default_place'
         % Used by record2msg

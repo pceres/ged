@@ -116,15 +116,21 @@ switch warn_type
         exception_list = {
             '28324' , '00/00/1897';     % la registrazione dello stato civile è rovinata e non si legge giorno e mese
             '28831' , '00/04/1904';     % la registrazione dello stato civile è rovinata e non si legge giorno
+            '29417' , '00/11/1959';     % i certificati di morte US online talvolta non indicano il giorno
+            '31183' , '00/11/1955';     % i certificati di morte US online talvolta non indicano il giorno
             '31986' , '00/10/1903';     % la registrazione dello stato civile è rovinata e non si legge giorno
             '32010' , '00/00/1904';     % la registrazione dello stato civile è rovinata e non si legge giorno e mese
             '38289' , '00/10/1903';     % la registrazione dello stato civile è rovinata e non si legge giorno
             '40011' , '00/00/1904';     % la registrazione dello stato civile è rovinata e non si legge giorno e mese
             '40261' , '00/12/1972';     % il giorno non è noto
             '40884' , '00/00/1877';     % atto di morte difficile da decifrare
+            '42196' , '00/02/1975';     % i certificati di morte US online talvolta non indicano il giorno
             '43063' , '00/08/1904';     % la registrazione dello stato civile è rovinata e non si legge giorno
             '46130' , '00/00/1904';     % la registrazione dello stato civile è rovinata e non si legge giorno e mese
+            '46780' , '00/11/1987';     % i certificati di morte US online talvolta non indicano il giorno
             '46825' , '00/06/1971';     % il giorno non è noto
+            '47022' , '00/12/1966';     % i certificati di morte US online talvolta non indicano il giorno
+            '47930' , '00/05/1935';     % i certificati di morte US online talvolta non indicano il giorno
             '56662' , '00/10/1903';     % la registrazione dello stato civile è rovinata e non si legge giorno
             '57255' , '00/00/1904';     % la registrazione dello stato civile è rovinata e non si legge giorno e mese
             '57342' , '00/04/1904';     % il giorno non è noto
@@ -156,10 +162,11 @@ switch warn_type
     case 'ged3_wrong_numeric_format'   
         % err.3: formato numerico errato nel campo mort_Nr: 621
         exception_list = {
+            '38347' , 'matr_Nr'    , '993';     % corretto: il valore è un numero progressivo dello stato civile Caposele (doc allegato nel registro nascite)
             '29192' , 'mort_Nr'    , '621';     % corretto: a Salerno ci sono molti atti di morte ogni anno
             '29394' , 'mort_Nr'    , '642';     % corretto: a Salerno ci sono molti atti di morte ogni anno
             '32362' , 'mort_Nr'    , '1123';    % corretto: a Roma ci sono molti atti di morte ogni anno
-            '38347' , 'matr_Nr'    , '993';     % corretto: il valore è un numero progressivo dello stato civile Caposele (doc allegato nel registro nascite)
+            '59294' , 'mort_Nr'    , '352';     % corretto: a Lioni ci sono molti atti di morte ogni anno
             '61894' , 'mort_Nr'    , '1001';    % corretto: a Napoli ci sono molti atti di morte ogni anno
             }; % at least one column, even if without rows  
         
