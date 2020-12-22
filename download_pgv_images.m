@@ -280,6 +280,9 @@ img2 = static_crop(img,flg_fullscreen,debug_level);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function img2 = static_crop(img,flg_fullscreen,debug_level)
 
+% this removes the areas that are surely not good, such as the left and
+% right sides
+
 height = size(img,1); % 1080
 width  = size(img,2); % 1920
 
@@ -586,7 +589,7 @@ height = screenSize(4);
 ancora = 1;
 count = 0;
 while ancora
-    % give focus to the browser
+    %% give focus to the browser
 %    robot_wrapper('mouse_move',{robot,width*0.07, height*0.075}); % no menu, no tab
 %    robot_wrapper('mouse_move',{robot,width*0.07, height*0.100}); % no menu, yes tab
     robot_wrapper('mouse_move',{robot,width*0.07, height*0.130}); % yes menu, yes tab
@@ -601,11 +604,13 @@ while ancora
     robot_wrapper('key_press',{robot,sprintf('\n')}); % enter
     pause(2) % wait for page load
     
+    %% activate and close search bar
     robot_wrapper('key_press',{robot,'^(f)'}); % activate search bar...
     pause(0.1)
     robot_wrapper('key_press',{robot,'{ESCAPE}'}); % ...and close it
     pause(0.1)
     
+    %% check if webpage shown corresponds to the requested PID
     filename_html = [fileparts(which(mfilename)) filesep 'temp$$$.htm'];
     flg_ok = check_SID_in_webpage(robot,id_genea,filename_html);
     count = count+1;
@@ -617,7 +622,7 @@ if (~flg_ok)
     return
 end
 
-% scroll the graph upwards
+%% scroll the graph upwards
 if flg_fullscreen
     robot_wrapper('key_press',{robot,'{F11}'}); % go fullscreen
     %pause(0.2)
@@ -641,11 +646,12 @@ for i_tmp = 1:3
     pause(0.3)
 end
 
+%% scroll the graph upwards
+
 % max number of scroll steps to try to center the image. Once that number
 % is reached, scrolling is stopped
 max_scroll = 20;
 
-% scroll the graph upwards
 tmp_debug_level = 1;
 result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level);
 count = 0;
@@ -667,33 +673,45 @@ if ( (count>0) && (result_whiteness(3)<1) )
     pause(0.2)
 end
 
-% move the graph a bit to the right
+%% move the graph a bit to the right
 %result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level);
+x_min_drag = 0.025;
+x_max_drag = 0.5;
+y_min_drag = 0.3;
+y_max_drag = 0.7;
 delta_right = 0.02;
 count = 0;
+[result_whiteness img] = get_result_whiteness(flg_fullscreen,tmp_debug_level);
 while ( (count<max_scroll) &&  (result_whiteness(1) < 1) ) % while left border is not white...
+    % find the right place (white pixel) to click and drag
+    [kx, ky] = find_white_pixel(img,x_min_drag,x_max_drag,y_min_drag,y_max_drag);
+
     % ...move the graph to the right
-    robot_wrapper('mouse_move',{robot,width*0.025, height*0.35});
+    robot_wrapper('mouse_move',{robot,width*kx, height*ky});
     pause(0.2)
-    robot_wrapper('mouse_move_with_button_pressed',{robot,'left',width*(0.025+delta_right), height*0.35});
+    robot_wrapper('mouse_move_with_button_pressed',{robot,'left',width*(kx+delta_right), height*ky});
     pause(0.1)
     %tmp_debug_level = 2
-    result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level);
+    [result_whiteness img] = get_result_whiteness(flg_fullscreen,tmp_debug_level);
+
     count = count+1;
 end
 if (count==max_scroll)
     fprintf(1,'\tCould not successfully move the graph to the right!')
 end
 
-% move the graph a bit downward until upper border is white
+%% move the graph a bit downward until upper border is white
 %result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level);
 delta_down = 0.04;
 count = 0;
 while ( (count<max_scroll) &&  (result_whiteness(3) < 1) ) % while upper border is not white...
+    % find the right place (white pixel) to click and drag
+    [kx, ky] = find_white_pixel(img,x_min_drag,x_max_drag,y_min_drag,y_max_drag);
+    
     % ...move the graph downward
-    robot_wrapper('mouse_move',{robot,width*(0.035+delta_right), height*0.35});
+    robot_wrapper('mouse_move',{robot,width*kx, height*ky});
     pause(0.2)
-    robot_wrapper('mouse_move_with_button_pressed',{robot,'left',width*(0.035+delta_right), height*(0.35+delta_down)});
+    robot_wrapper('mouse_move_with_button_pressed',{robot,'left',width*kx, height*(ky+delta_down)});
     pause(0.1)
     %tmp_debug_level = 2
     result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level);
@@ -703,7 +721,7 @@ if (count==max_scroll)
     fprintf(1,'\tCould not successfully move the graph downwards!')
 end
 
-% remove a possible wrong focus
+%% remove a possible wrong focus
 robot_wrapper('mouse_move',{robot,pos_mouse_pointer_scroll_down_x-10, pos_mouse_pointer_scroll_down_y-20}); % blank area
 robot_wrapper('mouse_click',{robot,'left'}); % click to remove bad focus, if present
 
@@ -717,7 +735,33 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function result_whiteness = get_result_whiteness(flg_fullscreen,tmp_debug_level)
+function [kx, ky, ok] = find_white_pixel(img,x1_min_drag,x1_max_drag,y1_min_drag,y1_max_drag)
+% find a white pixel (identified  by relative coordinates (0..1) kx and ky)
+% in the region x1_min_drag < kx < x1_max_drag & y1_min_drag < ky <
+% y1_max_drag of image img
+
+debug_level = 0;
+h = NaN;
+
+%h = figure;image(img);axis image,hold on
+ok = 0;
+count = 0;
+while ~ok && count<20
+    count = count+1;
+    kx = x1_min_drag + (x1_max_drag-x1_min_drag)*rand; % 0.025;
+    ky = y1_min_drag + (y1_max_drag-y1_min_drag)*rand; % 0.35;
+    plot(size(img,2)*kx, size(img,1)*ky,'ro')
+    ok = check_point_to_point_all_white(img,kx,ky,kx,ky,h,debug_level);
+end
+
+if ~ok
+    disp('could not find a white pixel to click and drag the graph!')
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [result_whiteness img] = get_result_whiteness(flg_fullscreen,tmp_debug_level)
 
 temp_dwnl = 'temp_img_XYZX$$.jpg';
 img = save_img_snapshot(temp_dwnl);
