@@ -17,7 +17,7 @@
 %
 %   action values:
 %       'search': search for a record in the str_archivio archive inside
-%                 the  PGV site via SOAP query.
+%                 the  PGV site via SOAP q'anauery.
 %                 params={str_archivio,wsdl_url,list_records}
 %                   str_archivio  : archive struct, with fields:
 %                       archivio  : matrix cell array archive as loaded by 'go.m'
@@ -598,8 +598,10 @@ ks_surn         = only_first_uppercase(ks_surn);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ks_out = only_first_uppercase(ks_in)
 
-list=regexp(ks_in,'[^\s'']+','match');
-ind_copy = regexp(ks_in,'[^a-zA-Z]');
+ks_in_ = regexprep(ks_in,'(\s)\s+','$1'); % remove multiple spaces
+
+list=regexp(ks_in_,'[^\s'']+','match');
+ind_copy = regexp(ks_in_,'[^a-zA-Z]');
 
 ks_out = '';
 for i_match=1:length(list)
