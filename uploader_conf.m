@@ -25,8 +25,11 @@ switch tag
             'BAGNOLI'               , 'Bagnoli Irpino, Avellino, Campania, ITA';
             'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
             'BUCCINO'               , 'Buccino, Salerno, Campania, ITA';
+            'CAIRANO'               , 'Cairano, Avellino, Campania, ITA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
+            'CANDIDA'               , 'Candida, Avellino, Campania, ITA';
             'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
+            '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'FRANCIA'               , 'Francia';
             'LIONI'                 , 'Lioni, Avellino, Campania, ITA';
             'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA';
@@ -34,7 +37,8 @@ switch tag
             'NAPOLI'                , 'Napoli, Napoli, Campania, ITA';
             'NEW YORK'              , 'New York, New York, New York, USA';
             'NOCERA( INFERIORE)?'   , 'Nocera Inferiore, Salerno, Campania, ITA';
-            '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
+            'PROCIDA'               , 'Procida, Napoli, Campania, ITA';
+            'ROCCAPIEMONTE'         , 'Roccapiemonte, Salerno, Campania, ITA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'SANT.ANGELO DEI LOMBARDI'  , 'Sant''Angelo dei Lombardi, Avellino, Campania, ITA';
             'SAN(TO)? MENNA'  , 'Santomenna, Salerno, Campania, ITA'; % for 'SAN MENNA' e 'SANTO MENNA'

@@ -48,6 +48,22 @@ function enter_data(str)
 
 robot = robot_wrapper('init');
 
+
+%% try to get focus to the form page
+screenSize = get(0, 'screensize');
+width  = screenSize(3);
+height = screenSize(4);
+
+kx_focus = 0.1;
+ky_focus = 0.3;
+robot_wrapper('mouse_move',{robot,width*kx_focus, height*ky_focus});
+robot_wrapper('mouse_click',{robot,'left'});
+pause(0.004);
+
+robot_wrapper('key_press',{robot,'^({HOME})'});
+pause(0.004);
+
+
 %%
 kx = 0.35; % don't take start of edit field to avoid text already present
 ky = 0.894;
@@ -64,7 +80,8 @@ kx = 0.26; % check for the Antenati (Ancestor) field
 ky = 0.235;
 tgt = [0.8431    0.8353    0.8392]; % grey color for Ancestor popup list
 thr = 1e-3;
-flg_is_grey = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
+flg_ask_temp = 0;
+flg_is_grey = check_pixel(robot,kx,ky,tgt,thr,flg_ask_temp);
 if flg_is_grey
     flg_ancestor = 1;
     disp('Found Ancestor field.')
@@ -92,6 +109,8 @@ ky = 0.27+dky_ancestor;
 tgt = [0.9333    0.9137    0.6471]; % white color for edit field
 thr = 0.05; % threshold has to be a little greater
 flg_is_yellow = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
+
+pause(0.04);
 
 if flg_is_blue && flg_is_light_blue && flg_is_yellow
     %compatible with entry for person, may proceed...
@@ -280,6 +299,10 @@ robot_wrapper('key_press',{robot,txt}); % type the text
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [flg_in_target color] = check_pixel(robot,kx,ky,tgt,thr,flg_ask)
+% tgt: [k_red k_green k_blue], [0..1] target RGB color
+% kx, ky: relative coordinates (with respect to full screen size) for pixel
+% flg_ask: ask for user interaction in case of pixel color different from target
+% thr: [0..1]: max distance between target and measured color
 
 imgfile = 'temp.jpg';
 
@@ -290,6 +313,7 @@ height = screenSize(4);
 robot_wrapper('save_snapshot',{robot,imgfile});
 img=imread(imgfile);
 
+%% check for third field (must be a white pixel)
 robot_wrapper('mouse_move',{robot,width*kx, height*ky});
 
 x=round(width*kx);
