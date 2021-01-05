@@ -23,8 +23,10 @@ end
 diary(logfile)
 
 if flgRegenerateClass
-    service_name = createClassFromWsdl(wsdl_url); %#ok<UNRCH>
+    disp('Regenerating WSDL class') %#ok<UNRCH>
+    service_name = createClassFromWsdl(wsdl_url);
 else
+    disp('Skipping Regeneration of WSDL class')
     service_name = 'GenealogyService';
 end
 
@@ -61,6 +63,14 @@ diary('off'),diary('on')
 result_out = Authenticate(class_instance,username,password,gedcom,compression,data_type); % SOAP function handler created by createClassFromWsdl
 
 SID = result_out.SID; % authentication session token
+
+flg_reauth_needed = check_reauthentication_needed(class_instance,SID);
+if flg_reauth_needed
+    fprintf(1,'\nWrong authentication detected, reauthenticating.\n')
+    result_out = Authenticate(class_instance,username,password,gedcom,compression,data_type); % SOAP function handler created by createClassFromWsdl
+    SID = result_out.SID; % authentication session token
+end
+
 fprintf(1,'    ...got session ID %s..\n',SID)
 diary('off'),diary('on')
 
@@ -221,3 +231,19 @@ catch
 end
 
 diary('off'),diary('on')
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function flg_reauth_needed = check_reauthentication_needed(class_instance,SID)
+
+position    = 'last';
+type        = 'INDI';
+
+fprintf(1,'\nRetrieving %s xref for %s (getXref)..\n',position,type)
+try
+    getXref(class_instance,SID,position,type);
+    flg_reauth_needed = 0;
+catch me %#ok<NASGU>
+    flg_reauth_needed = 1;
+end

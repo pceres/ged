@@ -166,7 +166,7 @@
 % result = uploader('create_individual',{struct('wsdl_url',wsdl_url,'SID',''),str_archivio,id_record,famc,fams});
 %
 % for id_record=[29373 29319],famc='F788';fams={};
-% 1, result = uploader('create_individual',{struct('wsdl_url',wsdl_url,'SID',[]),str_archivio,id_record,famc,fams});  end
+% 1, if ~exist('result','var') || ~isstruct(result) || ~isfield(result,'soap_struct') || ~isfield(result.soap_struct,'wsdl_url'),result.soap_struct=struct('wsdl_url',wsdl_url,'SID',[]);end; result = uploader('create_individual',{result.soap_struct,str_archivio,id_record,famc,fams});  end
 %
 
 
@@ -240,15 +240,15 @@ fams         = par_struct.fams; % bridal family (can be multiple, or empty list)
 wsdl_url = soap_struct.wsdl_url;
 if (~isfield(soap_struct,'SID') || isempty(soap_struct.SID) )
     [class_instance, SID] = pgv_authenticate(wsdl_url);
-    soap_struct.class_instance  = class_instance;
-    soap_struct.SID             = SID;
+    soap_struct = struct('wsdl_url',wsdl_url,'SID',SID);
 else
     result_init = pgv_init_class(wsdl_url);
     class_instance  = result_init.class_instance;
     SID             = soap_struct.SID;
 end
+result.soap_struct = soap_struct; % export soap session id for later usage (or preserve the one that was given in input)
 
-ind_record = strmatch(num2str(id_record),str_archivio.archivio(:,1),'exact');
+ind_record = find(strcmp(num2str(id_record),str_archivio.archivio(:,1)));
 if isempty(ind_record)
     error('Record ''%d'' not found in the archive!',id_record)
 end
@@ -258,7 +258,7 @@ str_record_info = result_tmp.str_record_info;
 PID = getNewXref(class_instance,SID,'INDI'); % PID of individual to be created
 gedcom_txt = prepare_gedcom_str(str_record_info,PID,famc,fams);
 
-result_tmp = uploader('create_individual_with_gedcom',{struct('wsdl_url',wsdl_url,'SID',SID),gedcom_txt});
+result_tmp = uploader('create_individual_with_gedcom',{soap_struct,gedcom_txt});
 
 % prepare output
 result.err_code     = err_code;
@@ -297,7 +297,7 @@ if (~isfield(soap_struct,'SID') || isempty(soap_struct.SID) )
     soap_struct.SID             = SID;
 else
     result_init = pgv_init_class(wsdl_url);
-    class_instance  = result_init.class_instance;    
+    class_instance  = result_init.class_instance;
     SID             = soap_struct.SID;
 end
 
@@ -1097,7 +1097,12 @@ result.list_changes = list_changes;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function result_init = pgv_init_class(wsdl_url)
 
-flg_force = 1; % force the reload of the wsdl
+if exist('GenealogyService')==2
+    flg_force = 0; % folder @GenealogyService already exists
+else    
+    flg_force = 1; % force the reload of the wsdl
+end
+
 result_init = PhpGedViewSoapInterface('init_class',{wsdl_url,flg_force});
 
 
@@ -1106,7 +1111,7 @@ result_init = PhpGedViewSoapInterface('init_class',{wsdl_url,flg_force});
 function [class_instance, SID] = pgv_authenticate(wsdl_url)
 
 % the auth request should be issued only once per session: issuing a
-% second auth request ctually logs the user out
+% second auth request actually logs the user out
 
 pgv_username = uploader_conf('pgv_username'); % username used for authentication on the pgv site
 pgv_password = uploader_conf('pgv_password'); % password used for authentication on the pgv site
@@ -3432,7 +3437,7 @@ par_struct = assert(params,{'str_archivio','id_record'});
 str_archivio = par_struct.str_archivio;
 id_record    = par_struct.id_record; % id of record from file to be uploaded    
 
-ind_record = strmatch(num2str(id_record),str_archivio.archivio(:,1),'exact');
+ind_record = find(strcmp(num2str(id_record),str_archivio.archivio(:,1)));
 if isempty(ind_record)
     error('Record ''%d'' not found in the archive!',id_record)
 end
@@ -3580,3 +3585,19 @@ str_record_info.ks_SID = ks_SID;
 result.err_code         = err_code;
 result.err_msg          = err_msg;
 result.str_record_info  = str_record_info;
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function flg_reauth_needed = check_reauthentication_needed(class_instance,SID)
+
+position    = 'last';
+type        = 'INDI';
+
+fprintf(1,'\nRetrieving %s xref for %s (getXref)..\n',position,type)
+try
+    getXref(class_instance,SID,position,type);
+    flg_reauth_needed = 0;
+catch me %#ok<NASGU>
+    flg_reauth_needed = 1;
+end
