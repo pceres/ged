@@ -1098,7 +1098,15 @@ result.list_changes = list_changes;
 function result_init = pgv_init_class(wsdl_url)
 
 if exist('GenealogyService')==2
-    flg_force = 0; % folder @GenealogyService already exists
+    % check wsdl_url inside the folder
+    txt=evalc('temp = GenealogyService');
+    z=regexp(txt,'wsdl: ''([^'']+)''','tokens');
+    wsdl_in_folder = z{1}{1};
+    if strcmp(wsdl_in_folder,wsdl_url)
+        flg_force = 0; % folder @GenealogyService already exists, and wsdl_url is correct
+    else
+        flg_force = 1; % folder @GenealogyService exists, but with wrong wsdl_url
+    end
 else    
     flg_force = 1; % force the reload of the wsdl
 end
