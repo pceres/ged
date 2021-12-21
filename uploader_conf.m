@@ -22,30 +22,41 @@ switch tag
         % Takes a string, and returns the canonical form of the place, if matching
         % eg.: 'Caposele' --> 'Caposele, Avellino, Campania, ITA'
         result = {
+            'AVELLINO'              , 'Avellino, Avellino, Campania, ITA';
             'BAGNOLI'               , 'Bagnoli Irpino, Avellino, Campania, ITA';
             'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
             'BUCCINO'               , 'Buccino, Salerno, Campania, ITA';
+            'BUENOS AIRES'          , 'Ciudad Autónoma de Buenos Aires, Buenos Aires, ARG';
             'CAIRANO'               , 'Cairano, Avellino, Campania, ITA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
+            'CANDELA'               , 'Candela, Foggia, Puglia, ITA';
             'CANDIDA'               , 'Candida, Avellino, Campania, ITA';
             'CAP[OU]S[S]?EL[AE]'    , 'Caposele, Avellino, Campania, ITA';  % for Caposele, Capussela, Capossela
+            'CASTELNUOVO'           , 'Castelnuovo di Conza, Salerno, Campania, ITA';
+            'COLLIANO'              , 'Colliano, Avellino, Campania, ITA';
             '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'FRANCIA'               , 'Francia';
+            'LAVIANO'               , 'Laviano, Salerno, Campania, ITA';
             'LIONI'                 , 'Lioni, Avellino, Campania, ITA';
+            'MONTEFORTE IRPINO'     , 'Monteforte Irpino, Avellino, Campania, ITA';
             'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA';
             'NEWARK'                , 'Newark, Essex, New Jersey, USA';
             'NAPOLI'                , 'Napoli, Napoli, Campania, ITA';
             'NEW YORK'              , 'New York, New York, New York, USA';
             'NOCERA( INFERIORE)?'   , 'Nocera Inferiore, Salerno, Campania, ITA';
+            'OLIVETO'               , 'Oliveto Citra, Salerno, Campania, ITA';            
             'PROCIDA'               , 'Procida, Napoli, Campania, ITA';
             'ROCCAPIEMONTE'         , 'Roccapiemonte, Salerno, Campania, ITA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
+            'S\.PAOLO'              , 'San Paolo, San Paolo, San Paolo, Brasile';
             'SANT.ANGELO DEI LOMBARDI'  , 'Sant''Angelo dei Lombardi, Avellino, Campania, ITA';
-            'SAN(TO)? MENNA'  , 'Santomenna, Salerno, Campania, ITA'; % for 'SAN MENNA' e 'SANTO MENNA'
+            'SAN(TO)? MENNA'        , 'Santomenna, Salerno, Campania, ITA'; % for 'SAN MENNA' e 'SANTO MENNA'
+            'SENERCHIA'             , 'Senerchia, Avellino, Campania, ITA';
             'SOLOFRA'               , 'Solofra, Salerno, Campania, ITA';
             'SOMMA VESUVIANA'       , 'Somma Vesuviana, Napoli, Campania, ITA';
             'UDINE'                 , 'Udine, Udine, Friuli Venezia Giulia, ITA';
             'TEORA'                 , 'Teora, Avellino, Campania, ITA';
+            'TOLONE'                , 'Tolone, Var, Provence-Alpes-Côte d''Azur, FRA';
             'TRIPOLI'               , 'Tripoli, 10, Greater Tripoli, LBY';
             'VALVA'                 , 'Valva, Salerno, Campania, ITA';
             };
