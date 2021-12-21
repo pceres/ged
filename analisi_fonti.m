@@ -102,7 +102,7 @@ function [matr_source list_stream] = load_index(filename,volume_pat,quiet)
 
 list_stream = {
     {'Nati','Battezzati'}
-    {'Matrimoni','Pubblicazioni','Matrimoni_relig'}
+    {'Matrimoni','Pubblicazioni','Processetti','Matrimoni_relig'}
     {'Morti'}
     };
 
