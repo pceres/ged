@@ -2,6 +2,7 @@ function rbt_entry_person(str_archivio,id_record)
 % rbt_entry_person(str_archivio,56762)
 % result = ged('record2msg',str_archivio,56762,'oneline')
 
+debug = 0; % set to 1 to enable debug messages and plots
 
 fprintf(1,'\nFilling field for record %d\n\n',id_record)
 disp(ged('record2msg',str_archivio,id_record,'oneline'))
@@ -27,13 +28,13 @@ else
     str.death_date  = str_record_info.ks_mort;
     str.death_place = str_record_info.ks_mort_luo;
     
-    enter_data(str)
+    enter_data(str,debug)
 end
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function enter_data(str)
+function enter_data(str,debug)
 % str.name        = 'Nome';
 % str.prefix_surname = 'Prefisso del cognome' % es. DEL, DI, DELLA
 % str.surname     = 'Cognome';
@@ -48,6 +49,9 @@ function enter_data(str)
 
 robot = robot_wrapper('init');
 
+dy_popup = 0.025; % delta y between popupoptions (0.014 on old Firefox)
+ks_source = 'S16'; % default source
+
 
 %% try to get focus to the form page
 screenSize = get(0, 'screensize');
@@ -61,97 +65,91 @@ robot_wrapper('mouse_click',{robot,'left'});
 pause(0.004);
 
 robot_wrapper('key_press',{robot,'^({HOME})'});
-pause(0.004);
+pause(0.2);
 
-
-%%
-kx = 0.35; % don't take start of edit field to avoid text already present
-ky = 0.894;
-tgt = [1.0000    1.0000    0.9922]; % white color for edit field
-thr = 1e-3;
-flg_ask = 0;
-flg_is_married = check_pixel(robot,kx,ky,tgt,thr,flg_ask); % is the third edit field present?
-
+%% analyse the page to detect the Name field vertical coordinate
+[flg_error_page ky_name flg_ancestor] = detect_ky(robot,debug);
 
 %%
-flg_ask = 1;
-
-kx = 0.26; % check for the Antenati (Ancestor) field
-ky = 0.235;
-tgt = [0.8431    0.8353    0.8392]; % grey color for Ancestor popup list
-thr = 1e-3;
-flg_ask_temp = 0;
-flg_is_grey = check_pixel(robot,kx,ky,tgt,thr,flg_ask_temp);
-if flg_is_grey
-    flg_ancestor = 1;
-    disp('Found Ancestor field.')
-    dky_ancestor = 0.028;
+if ~flg_error_page
+    % page is ok, do mode specific checks
+    
+    kx = 0.35; % don't sample at the beginning of edit field to avoid text already present
+    ky = 0.684+ky_name; % just in the middle of the death date edit field (if it exists)
+    tgt =  [0.9333    0.9137    0.6471]; % yellow color for edit field
+    thr = 2e-2;
+    flg_ask = 0;
+    descr = '"Death date" edit field (to detect if marriage fields are present)';
+    flg_is_married = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug); % is the third edit field present?
+    
+    kx = 0.1; % don't sample at the beginning of edit field to avoid text already present
+    ky = 0+ky_name;
+    tgt = [0.7098    0.7529    0.8706]; % blue color for edit field
+    thr =  0.05; % threshold has to be a little greater
+    descr = 'First check point (must be blue if the page is displayed)';
+    flg_is_blue = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug);
+    
+    kx = 0.1; % don't sample at the beginning of edit field to avoid text already present
+    ky = 0.028+ky_name;
+    tgt = [0.8196    0.8510    0.9333]; % light blue color for edit field
+    thr =  0.05; % threshold has to be a little greater
+    descr = 'Second check point (must be light blue if the page is displayed)';
+    flg_is_light_blue = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug);
+    
+    kx = 0.26; % don't sample at the beginning of edit field to avoid text already present
+    ky = 0.028+ky_name;
+    tgt = [0.9333    0.9137    0.6471]; % yellow color for edit field
+    thr = 0.05; % threshold has to be a little greater
+    descr = 'Third check point (must be yellow if the page is displayed)';
+    flg_is_yellow = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug);
+    
+    pause(0.04);
 else
-    flg_ancestor = 0;
-    dky_ancestor = 0;
+    flg_is_blue         = 0;
+    flg_is_light_blue   = 0;
+    flg_is_yellow       = 0;
 end
-disp('todo!!!')
 
-kx = 0.1; % don't take start of edit field to avoid text already present
-ky = 0.24+dky_ancestor;
-tgt = [0.7098    0.7529    0.8706]; % white color for edit field
-thr =  0.05; % threshold has to be a little greater
-flg_is_blue = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
-
-kx = 0.1; % don't take start of edit field to avoid text already present
-ky = 0.27+dky_ancestor;
-tgt = [0.8196    0.8510    0.9333]; % white color for edit field
-thr =  0.05; % threshold has to be a little greater
-flg_is_light_blue = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
-
-kx = 0.26; % don't take start of edit field to avoid text already present
-ky = 0.27+dky_ancestor;
-tgt = [0.9333    0.9137    0.6471]; % white color for edit field
-thr = 0.05; % threshold has to be a little greater
-flg_is_yellow = check_pixel(robot,kx,ky,tgt,thr,flg_ask);
-
-pause(0.04);
-
-if flg_is_blue && flg_is_light_blue && flg_is_yellow
+if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
     %compatible with entry for person, may proceed...
     
     %% ancestor (nascita, adozione, etc.)
     if flg_ancestor
         str_sex.kx = 0.26;
-        str_sex.ky = 0.235;
-        str_sex.dky = 0.014;
+        str_sex.ky = -0.03+ky_name;
+        str_sex.dky = dy_popup;
         str_sex.n = 2; % Nascita (Birth)
         select_item(robot,str_sex.kx,str_sex.ky,str_sex.dky,str_sex.n);
     end
     
     %% name
     str_nome.kx  = 0.26;
-    str_nome.ky  = 0.296+dky_ancestor;
+    str_nome.ky  = 0.055+ky_name;
     str_nome.txt = str.name;
     edit_field(robot,str_nome.kx,str_nome.ky,str_nome.txt)
     
     %% surname prefix (DEL, DI, es. DEL VECCHIO --> DEL)
     str_prefix_cogn.kx  = 0.26;
-    str_prefix_cogn.ky  = 0.325+dky_ancestor;
+    str_prefix_cogn.ky  = 0.084+ky_name;
     str_prefix_cogn.txt = str.prefix_surname;
     edit_field(robot,str_prefix_cogn.kx,str_prefix_cogn.ky,str_prefix_cogn.txt)
     
     %% surname (without prefix, es. DEL VECCHIO --> VECCHIO)
     str_cogn.kx  = 0.26;
-    str_cogn.ky  = 0.36+dky_ancestor;
+    str_cogn.ky  = 0.121+ky_name;
     str_cogn.txt = str.surname;
     edit_field(robot,str_cogn.kx,str_cogn.ky,str_cogn.txt)
     
-    %%
+    %% nickname
     str_nick.kx  = 0.26;
-    str_nick.ky  = 0.424+dky_ancestor;
+    str_nick.ky  = 0.188+ky_name;
     str_nick.txt = str.nickname;
     edit_field(robot,str_nick.kx,str_nick.ky,str_nick.txt)
     
-    %%
+    %% sex
     str_sex.kx = 0.26;
-    str_sex.ky = 0.58+dky_ancestor;
-    str_sex.dky = 0.014;
+    str_sex.ky = 0.34+ky_name;
+    str_sex.dky = dy_popup;
     str_sex.n = str.sex;
     select_item(robot,str_sex.kx,str_sex.ky,str_sex.dky,str_sex.n);
     
@@ -159,48 +157,51 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %% first group (birth)
     str_birth_date.kx  = 0.26;
-    str_birth_date.ky  = 0.638+dky_ancestor;
+    str_birth_date.ky  = 0.397+ky_name;
     str_birth_date.txt = str.birth_date;
     edit_field(robot,str_birth_date.kx,str_birth_date.ky,str_birth_date.txt)
     
     %%
     str_birth_place.kx  = 0.26;
-    str_birth_place.ky  = 0.68+dky_ancestor;
+    str_birth_place.ky  = 0.441+ky_name;
     str_birth_place.txt = str.birth_place;
     edit_field(robot,str_birth_place.kx,str_birth_place.ky,str_birth_place.txt)
     
     if flg_is_married
+        % there are 3 sets of date/place fields to be entered. 2nd is for
+        % marriage, 3rd for death
         disp('marriage information required')
         str_2nd_date.txt = str.marr_date;
         str_2nd_place.txt = str.marr_place;
         str_death_date.txt = str.death_date;
         str_death_place.txt = str.death_place;
     else
+        % there are 2 sets of date/place fields to be entered. 2nd is for death        
         disp('no marriage information required')
         str_2nd_date.txt = str.death_date;
         str_2nd_place.txt = str.death_place;
         str_death_date.txt = '';
         str_death_place.txt = '';
     end
-        
+    
     %% second group (marriage or death)
     str_2nd_date.kx  = 0.26;
-    str_2nd_date.ky  = 0.766+dky_ancestor;
+    str_2nd_date.ky  = 0.527+ky_name;
     edit_field(robot,str_2nd_date.kx,str_2nd_date.ky,str_2nd_date.txt)
     
     %%
     str_2nd_place.kx  = 0.26;
-    str_2nd_place.ky  = 0.805+dky_ancestor;
+    str_2nd_place.ky  = 0.566+ky_name;
     edit_field(robot,str_2nd_place.kx,str_2nd_place.ky,str_2nd_place.txt)
     
     %% third group (death)
     str_death_date.kx  = 0.26;
-    str_death_date.ky  = 0.894+dky_ancestor;
+    str_death_date.ky  = 0.647+ky_name;
     edit_field(robot,str_death_date.kx,str_death_date.ky,str_death_date.txt)
     
     %%
     str_death_place.kx  = 0.26;
-    str_death_place.ky  = 0.934+dky_ancestor;
+    str_death_place.ky  = 0.687+ky_name;
     edit_field(robot,str_death_place.kx,str_death_place.ky,str_death_place.txt)
     
     
@@ -210,38 +211,39 @@ if flg_is_blue && flg_is_light_blue && flg_is_yellow
     width  = screenSize(3);
     height = screenSize(4);
     
+    %% scroll down
     str_form.kx  = 0.16;
-    str_form.ky  = 0.934+dky_ancestor;
+    str_form.ky  = 0.695+ky_name;
     robot_wrapper('mouse_move',{robot,width*str_form.kx, height*str_form.ky});
     
     robot_wrapper('mouse_click',{robot,'left'});
     robot_wrapper('key_press',{robot,'{END}'}); % move to the end of page
     pause(0.3)
     
-    % since here we are at the end of page, so the Ancestor offset
-    % dky_ancestor must be no longer used
+    % since here we are at the end of page, the name field vertical offset
+    % ky_name must be no longer used
     
-    %%
+    %% clock on "source" to make the other source fields be shown
     str_src_link.kx  = 0.04;
-    str_src_link.ky  = 0.775;
+    str_src_link.ky  = 0.769; % 0.775 on old Firefox
     robot_wrapper('mouse_move',{robot,width*str_src_link.kx, height*str_src_link.ky});
     robot_wrapper('mouse_click',{robot,'left'});
     
-    %%
+    %% enter source
     str_src_id.kx  = 0.28;
     str_src_id.ky  = 0.81;
     robot_wrapper('mouse_move',{robot,width*str_src_id.kx, height*str_src_id.ky});
     robot_wrapper('mouse_click',{robot,'left'});
     robot_wrapper('key_press',{robot,'^(a)'}); % select all
-    robot_wrapper('key_press',{robot,'S16'}); % move to the end of page
+    robot_wrapper('key_press',{robot,ks_source}); % insert default source
     
-    %%
+    %% click outside to make the suggestion popup disappear
     robot_wrapper('mouse_move',{robot,width*str_form.kx, height*str_form.ky});
     robot_wrapper('mouse_click',{robot,'left'});
     
     %%
     str_src_link.kx  = 0.01;
-    str_src_link.ky  = 0.79;
+    str_src_link.ky  = 0.781;
     robot_wrapper('mouse_move',{robot,width*str_src_link.kx, height*str_src_link.ky});
     %robot_wrapper('mouse_click',{robot,'left'});
     
@@ -268,11 +270,11 @@ robot_wrapper('mouse_move',{robot,width*kx, height*ky});
 
 
 robot_wrapper('mouse_click',{robot,'left'});
-pause(0.03)
+pause(0.1)
 
 robot_wrapper('mouse_move',{robot,width*kx, height*(ky+n*dky)});
 robot_wrapper('mouse_click',{robot,'left'});
-%pause(0.03)
+pause(0.03)
 
 
 
@@ -298,7 +300,7 @@ robot_wrapper('key_press',{robot,txt}); % type the text
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [flg_in_target color] = check_pixel(robot,kx,ky,tgt,thr,flg_ask)
+function [flg_in_target color] = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug)
 % tgt: [k_red k_green k_blue], [0..1] target RGB color
 % kx, ky: relative coordinates (with respect to full screen size) for pixel
 % flg_ask: ask for user interaction in case of pixel color different from target
@@ -318,9 +320,13 @@ robot_wrapper('mouse_move',{robot,width*kx, height*ky});
 
 x=round(width*kx);
 y=round(height*ky);
-image(img);
-hold on
-plot(x,y,'ro')
+
+if debug
+    figure
+    image(img);
+    hold on
+    plot(x,y,'ro')
+end
 dots = img(y,x,:);
 dotr = double(dots(:,:,1))/255;
 dotg = double(dots(:,:,2))/255;
@@ -329,11 +335,136 @@ color = [dotr dotg dotb];
 err = sum(abs(tgt-color));
 if err < thr
     flg_in_target = 1;
+    msg = 'Match!';
 else
     flg_in_target = 0;
+    msg = '*** NO MATCH !!!';
     if flg_ask
         fprintf(1,'err=%f\n',err);
         disp(color);
         input('Should I stop here? Enter to go on, Ctrl-C to stop')
     end
 end
+
+if debug
+    fprintf(1,'\n%s\n\tx: %d (%.3f) y: %d (%.3f)\n\tRGB [%.4f %.4f %.4f] (target: [%.4f %.4f %.4f])\n\terror %.4f (threshold: %.4f) - %s\n',descr,x,kx,y,ky,color(1),color(2),color(3),tgt(1),tgt(2),tgt(3),err,thr,msg)
+    
+    % % figure plotting the measured and target color
+    % hf = gcf;
+    % ky = 0.028+ky_name;figure(100)
+    % hold off
+    % thickness = 20;
+    % plot([0 1],[2 2],'LineWidth',thickness,'Color',tgt)
+    % hold on
+    % plot([0 1],[1 1],'LineWidth',thickness,'Color',color)
+    % axis([0 1 0.5 2.5]);
+    % legend({'measure','target'})
+    % set(gcf,'Position',[1240 560 560 420])
+    % title(msg)
+    % figure(hf)
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [flg_error_page ky_name flg_ancestor] = detect_ky(robot,debug)
+
+imgfile = 'temp.jpg';
+
+screenSize = get(0, 'screensize');
+width  = screenSize(3);
+height = screenSize(4);
+
+robot_wrapper('save_snapshot',{robot,imgfile});
+img=imread(imgfile);
+
+
+%% detect intervals with blue color
+
+kx1 = 0.1;
+tgt = [0.7098 0.7529 0.8706]; % look for blue
+descr = 'First blue area';
+
+x1 = round(kx1*width);
+dots = img(:,x1,:); % all points;
+dotr = double(dots(:,:,1))/255;
+dotg = double(dots(:,:,2))/255;
+dotb = double(dots(:,:,3))/255;
+thr = 3e-2;
+[ind_rise_edge ind_fall_edge v_y v_l v_ky v_kl] = analyse_delta_y(dotr,dotg,dotb,tgt,thr);
+
+ky_thr = 0.3;
+kl_thr = 0.01;
+[temp ind_sort] = sort(ind_rise_edge);
+ind_ok_blue = find(v_ky(ind_sort)<ky_thr &  v_kl(ind_sort)>kl_thr);
+
+switch length(ind_ok_blue)
+    case 1
+        % only one blue area: Name (Nome) field
+        ky_name = v_ky(ind_sort(ind_ok_blue));
+        flg_ancestor = 0;
+        flg_error_page = 0;
+    case 2
+        % two blue areas: Ancestors (Antenati) and Name (Nome) fields
+        ky_name = v_ky(ind_sort(ind_ok_blue(2))); % Name field is the second one
+        flg_ancestor = 1;
+        flg_error_page = 0;
+    otherwise
+        % zero or more than two blue areas: there is an error in the page,
+        % maybe is is fully or partially hidden by other windows
+        ky_name = NaN; % Name field is the second one
+        flg_ancestor = NaN;
+        flg_error_page = 1;
+end
+y_name = round(ky_name*height);
+
+
+if debug
+    fprintf(1,'\n%s\n\tmiddle of largest range (tgt RGB = [%d %d %d] - threshold: %.4f - x1 = %d (kx1=%.4f) )\n\ty_name = %d (ky_name = %.4f)\n',descr,tgt(1),tgt(2),tgt(3),thr,x1,kx1,y_name,ky_name)
+
+    figure(110)
+    hold off
+    image(img);
+    hold on
+    plot([1 1]*x1,[1 length(dotr)],'r',ones(length(v_y),1)*x1,v_y,'.k',ones(length(v_y(v_l>0)),1)*x1,v_y(v_l>0),'ok',x1,y_name,'ro')
+    title(descr)
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [ind_rise_edge ind_fall_edge v_y v_l v_ky v_kl] = analyse_delta_y(dotr,dotg,dotb,tgt,thr)
+
+screenSize = get(0, 'screensize');
+%width  = screenSize(3);
+height = screenSize(4);
+
+abserr = abs([dotr dotg dotb]-repmat(tgt,length(dotr),1)); % [0..1]
+d = sqrt(sum(abserr.^2,2))/sqrt(3); % [0..1] 0 -> identical colors, 1 -> totally different colors
+
+err = d<=thr;
+err_prev = [0; err(1:end-1)];
+rise_edge = (err & ~err_prev);
+ind_rise_edge = find(rise_edge);
+fall_edge = (~err & err_prev);
+ind_fall_edge = find(fall_edge)-1;
+
+if ind_fall_edge(1)<ind_rise_edge(1)
+    % discard first unmatched falling edge
+    ind_fall_edge = ind_fall_edge(2:end);
+end
+
+if ind_fall_edge(end)<ind_rise_edge(end)
+    % add a virtual falling edge if the line ends in white at the border of the screen
+    ind_fall_edge(end+1) = length(dotr);
+end
+
+[temp ind_sort] = sort(ind_rise_edge-ind_fall_edge);
+ind_rise_edge = ind_rise_edge(ind_sort);
+ind_fall_edge = ind_fall_edge(ind_sort);
+
+v_y = round(mean([ind_fall_edge ind_rise_edge],2));
+v_l = ind_fall_edge-ind_rise_edge;
+
+v_ky = v_y/height;
+v_kl = v_l/height;

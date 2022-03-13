@@ -14,6 +14,7 @@ function SOAP_tester(wsdl_url,password)
 %
 
 flgRegenerateClass = 0; % 1 --> recreate the method files in the hidden @GenealogyService folder; 0 --> just try to use the xisting files
+flgSkipFullSearch  = 0; % 1 --> skip the full search (getXred with position='all', which is slow)
 
 logfile = 'soap_logfile.txt';
 diary off
@@ -95,20 +96,23 @@ diary('off'),diary('on')
 %
 % retrieve info on individual ID's in the gedcom
 %
-
-position    = 'all';
-type        = 'INDI';
-
-fprintf(1,'\nRetrieving %s xref for %s (getXref)..\n',position,type)
-diary('off'),diary('on')
-list_PID = getXref(class_instance,SID,position,type);
-fprintf(1,'    ...got %d ID''s..\n',length(list_PID))
-
-ind = ceil(length(list_PID)*rand);
-PID = list_PID{ind}; % pick a random PID
-fprintf(1,'    ...picking ID %s..\n',PID)
-diary('off'),diary('on')
-
+if ~flgSkipFullSearch
+    position    = 'all';
+    type        = 'INDI';
+    
+    fprintf(1,'\nRetrieving %s xref for %s (getXref)..\n',position,type)
+    diary('off'),diary('on')
+    list_PID = getXref(class_instance,SID,position,type);
+    fprintf(1,'    ...got %d ID''s..\n',length(list_PID))
+    
+    ind = ceil(length(list_PID)*rand);
+    PID = list_PID{ind}; % pick a random PID
+    fprintf(1,'    ...picking ID %s..\n',PID)
+    diary('off'),diary('on')
+else
+    fprintf(1,'*** WARNING! Skipping check getXref on all individuals!')
+    PID = 'I0000';
+end
 
 
 %
@@ -161,7 +165,7 @@ diary('off'),diary('on')
 
 
 %
-% retrieve info on Person by ID (with wrong PID)
+% retrieve info on Person by ID (with wrong session and wrong PID)
 %
 
 % PID = 'I0000';
@@ -174,8 +178,8 @@ try
     
     display(result_out);
     display(result_out.gedcom(1:len));
-catch
-    ks = lasterr;
+catch me
+    ks = me.message;
     fprintf(1,'*** Errore nell''esecuzione del comando: %s\n',ks)
 end
 
@@ -191,8 +195,8 @@ try
     
     display(result_out);
     display(result_out.gedcom);
-catch
-    ks = lasterr;
+catch me
+    ks = me.message;
     fprintf(1,'*** Errore nell''esecuzione del comando: %s\n',ks)
 end
 
@@ -225,8 +229,8 @@ try
     
     display(result_out);
     display(result_out.gedcom(1:len));
-catch
-    ks = lasterr;
+catch me
+    ks = me.message;
     fprintf(1,'*** Errore nell''esecuzione del comando: %s\n',ks)
 end
 
