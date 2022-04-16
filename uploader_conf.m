@@ -26,7 +26,7 @@ switch tag
             'BAGNOLI'               , 'Bagnoli Irpino, Avellino, Campania, ITA';
             'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
             'BUCCINO'               , 'Buccino, Salerno, Campania, ITA';
-            'BUENOS AIRES'          , 'Ciudad Autónoma de Buenos Aires, Buenos Aires, ARG';
+            'BUENOS AIRES'          , 'Ciudad AutÃ³noma de Buenos Aires, Buenos Aires, ARG';
             'CAGGIANO'              , 'Caggiano, Salerno, Campania, ITA';
             'CAIRANO'               , 'Cairano, Avellino, Campania, ITA';
             'CALABRITTO'            , 'Calabritto, Avellino, Campania, ITA';
@@ -50,6 +50,7 @@ switch tag
             'NOLA'                  , 'Nola, Napoli, Campania, ITA';
             'OLIVETO'               , 'Oliveto Citra, Salerno, Campania, ITA';
             'PANAMA'                , 'Panama';
+            'PHILADELPHIA USA'      , 'Philadelphia, Philadelphia, Pennsylvania, USA';
             'PROCIDA'               , 'Procida, Napoli, Campania, ITA';
             'ROCCAPIEMONTE'         , 'Roccapiemonte, Salerno, Campania, ITA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
@@ -62,7 +63,7 @@ switch tag
             'STUART FLORIDA'        , 'Stuart, Martin, Florida, USA'
             'UDINE'                 , 'Udine, Udine, Friuli Venezia Giulia, ITA';
             'TEORA'                 , 'Teora, Avellino, Campania, ITA';
-            'TOLONE'                , 'Tolone, Var, Provence-Alpes-Côte d''Azur, FRA';
+            'TOLONE'                , 'Tolone, Var, Provence-Alpes-CÃ´te d''Azur, FRA';
             'TRIPOLI'               , 'Tripoli, 10, Greater Tripoli, LBY';
             'VALVA'                 , 'Valva, Salerno, Campania, ITA';
             };
