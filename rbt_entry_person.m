@@ -3,8 +3,19 @@ function rbt_entry_person(str_archivio,id_record)
 % result = ged('record2msg',str_archivio,56762,'oneline')
 
 debug = 1; % set to 1 to enable debug messages and plots
-screen_type = 1; % [1,2] 1 --> Slackware 15 on laptop (1920x1080); 2 --> Slackware 15 on VNC (1280x1024)
 
+screensize = get(0,'screensize');
+%width  = screensize(3);
+height = screensize(4);
+
+switch height
+    case 1080
+        screen_type = 1; % [1,2] 1 --> Slackware 15 on laptop (1920x1080); 2 --> Slackware 15 on VNC (1280x1024)
+    case 1024
+        screen_type = 2; % [1,2] 1 --> Slackware 15 on laptop (1920x1080); 2 --> Slackware 15 on VNC (1280x1024)
+    otherwise
+        error('Unrecognized screen height %d!',height)
+end
 
 fprintf(1,'\nFilling field for record %d\n\n',id_record)
 disp(ged('record2msg',str_archivio,id_record,'oneline'))
