@@ -318,7 +318,7 @@ else
     image(img);
     
     fprintf(1,'flg_is_blue=%d\nflg_is_light_blue=%d\nflg_is_yellow=%d\n',flg_is_blue,flg_is_light_blue,flg_is_yellow);
-    error('incompatible with PGV entry form for a person')
+    error('It seems that the page is not a PGV entry form for a person!')
 end
 
 
@@ -525,12 +525,12 @@ ind_rise_edge = find(rise_edge);
 fall_edge = (~err & err_prev);
 ind_fall_edge = find(fall_edge)-1;
 
-if ind_fall_edge(1)<ind_rise_edge(1)
+if ~isempty(ind_fall_edge) && ~isempty(ind_rise_edge) && (ind_fall_edge(1)<ind_rise_edge(1))
     % discard first unmatched falling edge
     ind_fall_edge = ind_fall_edge(2:end);
 end
 
-if ind_fall_edge(end)<ind_rise_edge(end)
+if ~isempty(ind_fall_edge) && ~isempty(ind_rise_edge) && (ind_fall_edge(end)<ind_rise_edge(end))
     % add a virtual falling edge if the line ends in white at the border of the screen
     ind_fall_edge(end+1) = length(dotr);
 end
