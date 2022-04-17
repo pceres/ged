@@ -93,7 +93,7 @@ if ~flg_error_page
     kx = 0.35; % don't sample at the beginning of edit field to avoid text already present
     ky = 0.684+ky_name; % just in the middle of the death date edit field (if it exists)
     tgt =  [0.9333    0.9137    0.6471]; % yellow color for edit field
-    thr = 2e-2;
+    thr = 0.05;
     flg_ask = 0;
     descr = '"Death date" edit field (to detect if marriage fields are present)';
     flg_is_married = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug); % is the third edit field present?
