@@ -22,6 +22,7 @@ switch tag
         % Takes a string, and returns the canonical form of the place, if matching
         % eg.: 'Caposele' --> 'Caposele, Avellino, Campania, ITA'
         result = {
+            'ACQUAMELA'             , 'Acquamela (fraz. di Baronissi), Salerno, Campania, ITA';
             'AVELLINO'              , 'Avellino, Avellino, Campania, ITA';
             'BAGNOLI'               , 'Bagnoli Irpino, Avellino, Campania, ITA';
             'BLOOMFIELD'            , 'Bloomfield, Essex, New Jersey, USA';
