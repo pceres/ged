@@ -2,7 +2,7 @@ function rbt_entry_person(str_archivio,id_record)
 % rbt_entry_person(str_archivio,56762)
 % result = ged('record2msg',str_archivio,56762,'oneline')
 
-debug = 1; % set to 1 to enable debug messages and plots
+debug = 0; % set to 1 to enable debug messages and plots
 
 screensize = get(0,'screensize');
 %width  = screensize(3);
@@ -360,6 +360,7 @@ robot_wrapper('mouse_click',{robot,'left'});
 robot_wrapper('key_press',{robot,'^(a)'}); % select all
 %pause(0.05)
 robot_wrapper('key_press',{robot,txt}); % type the text
+robot_wrapper('key_press',{robot,'{TAB}'}); % dismiss possible pop up list, and pass to next field
 
 
 
