@@ -37,11 +37,14 @@ switch tag
             'CAPACCIO'              , 'Capaccio, Salerno, Campania, ITA';
             'CASTELNUOVO'           , 'Castelnuovo di Conza, Salerno, Campania, ITA';
             'COLLIANO'              , 'Colliano, Avellino, Campania, ITA';
+            'ELIZABETH( NJ)?'       , 'Elizabeth, Union, New Jersey, USA';
             '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
             'FRANCIA'               , 'Francia';
             'LAVIANO'               , 'Laviano, Salerno, Campania, ITA';
             'LIONI'                 , 'Lioni, Avellino, Campania, ITA';
+            'MATERDOMINI'           , 'Caposele, Avellino, Campania, ITA';
             'MONTANO ANTILIA'       , 'Montano Antilia, Salerno, Campania, ITA';
+            'MONTCLAIR( NJ)'        , 'Montclair, Essex, New Jersey, USA';
             'MONTEFORTE IRPINO'     , 'Monteforte Irpino, Avellino, Campania, ITA';
             'MORRA IRPIN[AO]'       , 'Morra De Sanctis, Avellino, Campania, ITA';
             'NEWARK'                , 'Newark, Essex, New Jersey, USA';
@@ -49,6 +52,7 @@ switch tag
             'NEW YORK'              , 'New York, New York, New York, USA';
             'NOCERA( INFERIORE)?'   , 'Nocera Inferiore, Salerno, Campania, ITA';
             'NOLA'                  , 'Nola, Napoli, Campania, ITA';
+            'N(A|O)VAR(A|O) (DI SICILIA|MESSINA)' , 'Novara di Sicilia, Messina, Sicilia, ITA';
             'OLIVETO'               , 'Oliveto Citra, Salerno, Campania, ITA';
             'PANAMA'                , 'Panama';
             'PHILADELPHIA USA'      , 'Philadelphia, Philadelphia, Pennsylvania, USA';

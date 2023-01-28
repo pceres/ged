@@ -2,3 +2,6 @@
 *.m~
 /archivio
 /@GenealogyService
+logfile*
+temp*
+build_family_fast_datafile*

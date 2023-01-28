@@ -1,6 +1,21 @@
 function rbt_entry_person(str_archivio,id_record)
 % rbt_entry_person(str_archivio,56762)
 % result = ged('record2msg',str_archivio,56762,'oneline')
+%
+% tested on:
+% - Slackware 15+ (Current)
+% - Firefox 109.0
+% - resolution 2048x1152
+%
+% Before using ensure that:
+% 1) Firefox zoom level is 0 (neutral)
+% 2) Firefox find tab in the lower part of the page is not visible
+% 3) Firefox upper menu shown are:
+%    - menu (file, edit, ecc.);
+%    - page tabs;
+%    - address;
+%    - preferred toolbar
+% 
 
 debug = 0; % set to 1 to enable debug messages and plots
 
@@ -13,6 +28,8 @@ switch height
         screen_type = 1; % [1,2] 1 --> Slackware 15 on laptop (1920x1080); 2 --> Slackware 15 on VNC (1280x1024)
     case 1024
         screen_type = 2; % [1,2] 1 --> Slackware 15 on laptop (1920x1080); 2 --> Slackware 15 on VNC (1280x1024)
+    case 1152
+        screen_type = 3; % [1,2,3] 1 --> Slackware 15+ on laptop (2048x1152);
     otherwise
         error('Unrecognized screen height %d!',height)
 end
@@ -49,7 +66,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function enter_data(str,debug,screen_type)
 % str.name        = 'Nome';
-% str.prefix_surname = 'Prefisso del cognome' % es. DEL, DI, DELLA
+% str.prefix_surname = 'Prefisso del cognome'; % es. DEL, DI, DELLA
 % str.surname     = 'Cognome';
 % str.nickname    = 'Soprannome';
 % str.sex         = 1; % 1 --> M; 2 --> F; 3 --> Unknown
@@ -91,11 +108,11 @@ if ~flg_error_page
     % page is ok, do mode specific checks
     
     kx = 0.35; % don't sample at the beginning of edit field to avoid text already present
-    ky = 0.684+ky_name; % just in the middle of the death date edit field (if it exists)
+    ky = 0.640+ky_name; % just in the middle of the death location edit field (if it exists) % 0.684+ky_name on 1920x1080 
     tgt =  [0.9333    0.9137    0.6471]; % yellow color for edit field
     thr = 0.05;
     flg_ask = 0;
-    descr = '"Death date" edit field (to detect if marriage fields are present)';
+    descr = '"Death location" edit field (to detect if marriage fields are present)';
     flg_is_married = check_pixel(robot,kx,ky,tgt,thr,flg_ask,descr,debug); % is the third edit field present?
     
     kx = 0.15; % don't sample at the beginning of edit field to avoid text already present
@@ -152,13 +169,13 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %% surname (without prefix, es. DEL VECCHIO --> VECCHIO)
     str_cogn.kx  = 0.26;
-    str_cogn.ky  = 0.121+ky_name;
+    str_cogn.ky  = 0.120+ky_name;
     str_cogn.txt = str.surname;
     edit_field(robot,str_cogn.kx,str_cogn.ky,str_cogn.txt)
     
     %% nickname
     str_nick.kx  = 0.26;
-    str_nick.ky  = 0.188+ky_name;
+    str_nick.ky  = 0.178+ky_name; % 0.188+ky_name;
     str_nick.txt = str.nickname;
     edit_field(robot,str_nick.kx,str_nick.ky,str_nick.txt)
     
@@ -190,7 +207,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_birth_place.ky  = 0.441+ky_name;
     else
         % VNC
-        str_birth_place.ky  = ky_birth_date+0.04;
+        str_birth_place.ky  = ky_birth_date+0.031;
     end
     str_birth_place.txt = str.birth_place;
     edit_field(robot,str_birth_place.kx,str_birth_place.ky,str_birth_place.txt)
@@ -219,7 +236,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_2nd_date.ky  = 0.527+ky_name;
     else
         % VNC
-        str_2nd_date.ky  = ky_birth_date+0.126;
+        str_2nd_date.ky  = ky_birth_date+0.110; % 0.126 on 1920x1080
     end
     edit_field(robot,str_2nd_date.kx,str_2nd_date.ky,str_2nd_date.txt)
     
@@ -230,7 +247,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_2nd_place.ky  = 0.566+ky_name;
     else
         % VNC
-        str_2nd_place.ky  = ky_birth_date+0.165;
+        str_2nd_place.ky  = ky_birth_date+0.145; % 0.165 on 1920x1080
     end
     edit_field(robot,str_2nd_place.kx,str_2nd_place.ky,str_2nd_place.txt)
     
@@ -241,7 +258,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_death_date.ky  = 0.647+ky_name;
     else
         % VNC
-        str_death_date.ky  = ky_birth_date+0.255;
+        str_death_date.ky  = ky_birth_date+0.225; % 0.255 on 1920x1080
     end
     edit_field(robot,str_death_date.kx,str_death_date.ky,str_death_date.txt)
     
@@ -252,7 +269,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_death_place.ky  = 0.687+ky_name;
     else
         % VNC
-        str_death_place.ky  = ky_birth_date+0.295;
+        str_death_place.ky  = ky_birth_date+0.265; % 0.295 on 1920x1080
     end
     edit_field(robot,str_death_place.kx,str_death_place.ky,str_death_place.txt)
     
@@ -282,7 +299,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_src_link.ky  = 0.769; % 0.775 on old Firefox
     else
         % VNC
-        str_src_link.ky  = 0.76;
+        str_src_link.ky  = 0.78; % 0.76 on 1920x1080
     end
     robot_wrapper('mouse_move',{robot,width*str_src_link.kx, height*str_src_link.ky});
     robot_wrapper('mouse_click',{robot,'left'});
@@ -294,7 +311,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
         str_src_id.ky  = 0.81;
     else
         % VNC
-        str_src_id.ky  = 0.79;
+        str_src_id.ky  = 0.816; % 0.79 on 1920x1080
     end
     robot_wrapper('mouse_move',{robot,width*str_src_id.kx, height*str_src_id.ky});
     robot_wrapper('mouse_click',{robot,'left'});
@@ -307,7 +324,7 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %%
     str_src_link2.kx  = 0.01;
-    str_src_link2.ky = str_src_link.ky+0.012;
+    str_src_link2.ky = str_src_link.ky+0.010; % 0.012 on 1920x1080
     robot_wrapper('mouse_move',{robot,width*str_src_link2.kx, height*str_src_link2.ky});
     %robot_wrapper('mouse_click',{robot,'left'});
     
@@ -463,8 +480,7 @@ ky_thr = 0.3;
 kl_thr = 0.01;
 ind_ok_blue = find(v_ky(ind_sort)<ky_thr &  v_kl(ind_sort)>kl_thr);
 
-ky_thr = 0.55;
-kl_thr = 0.01;
+ky_thr = 0.51;
 ind_ok_sex = find(v_ky(ind_sort)>ky_thr &  v_kl(ind_sort)>kl_thr);
 
 switch length(ind_ok_blue)
