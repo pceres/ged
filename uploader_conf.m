@@ -39,7 +39,6 @@ switch tag
             'COLLIANO'              , 'Colliano, Avellino, Campania, ITA';
             'ELIZABETH( NJ)?'       , 'Elizabeth, Union, New Jersey, USA';
             '(F|PH)ILIPPE[R]?VILLE' , 'Philippeville, Skikda, Skikda, DZA';
-            'FRANCIA'               , 'Francia';
             'LAVIANO'               , 'Laviano, Salerno, Campania, ITA';
             'LIONI'                 , 'Lioni, Avellino, Campania, ITA';
             'MATERDOMINI'           , 'Caposele, Avellino, Campania, ITA';
@@ -54,13 +53,13 @@ switch tag
             'NOLA'                  , 'Nola, Napoli, Campania, ITA';
             'N(A|O)VAR(A|O) (DI SICILIA|MESSINA)' , 'Novara di Sicilia, Messina, Sicilia, ITA';
             'OLIVETO'               , 'Oliveto Citra, Salerno, Campania, ITA';
-            'PANAMA'                , 'Panama';
             'PHILADELPHIA USA'      , 'Philadelphia, Philadelphia, Pennsylvania, USA';
             'PROCIDA'               , 'Procida, Napoli, Campania, ITA';
             'ROCCAPIEMONTE'         , 'Roccapiemonte, Salerno, Campania, ITA';
             'SALERNO'               , 'Salerno, Salerno, Campania, ITA';
             'S\.PAOLO'              , 'San Paolo, San Paolo, San Paolo, Brasile';
             'SANT.ANGELO DEI LOMBARDI'  , 'Sant''Angelo dei Lombardi, Avellino, Campania, ITA';
+            'SANT''ANTIMO'          , 'Sant''Antimo, Napoli, Campania, ITA';
             'SAN(TO)? MENNA'        , 'Santomenna, Salerno, Campania, ITA'; % for 'SAN MENNA' e 'SANTO MENNA'
             'SENERCHIA'             , 'Senerchia, Avellino, Campania, ITA';
             'SOLOFRA'               , 'Solofra, Salerno, Campania, ITA';
@@ -71,6 +70,10 @@ switch tag
             'TOLONE'                , 'Tolone, Var, Provence-Alpes-Côte d''Azur, FRA';
             'TRIPOLI'               , 'Tripoli, 10, Greater Tripoli, LBY';
             'VALVA'                 , 'Valva, Salerno, Campania, ITA';
+            
+            'ALGERIA'               , 'Algeria';
+            'FRANCIA'               , 'Francia';
+            'PANAMA'                , 'Panama';
             };
 
     case 'list_conversion_table.pgvu'
