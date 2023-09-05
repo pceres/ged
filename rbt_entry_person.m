@@ -190,24 +190,36 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %% first group (birth)
     str_birth_date.kx  = 0.26;
-    if screen_type == 1
-        % laptop
-        str_birth_date.ky  =  0.397+ky_name;
-    else
-        % VNC
-        str_birth_date.ky  =  ky_birth_date-0.007;
-    end
+    switch screen_type
+        case 1
+            % laptop
+            str_birth_date.ky  =  0.397+ky_name;
+        case 2
+            % VNC
+            str_birth_date.ky  =  ky_birth_date-0.007;
+        case 3
+            % laptop 1920x1080
+            str_birth_date.ky  =  ky_birth_date-0.007;
+        otherwise
+            error('Unknown screen_type %d!',screen_type)
+    end    
     str_birth_date.txt = str.birth_date;
     edit_field(robot,str_birth_date.kx,str_birth_date.ky,str_birth_date.txt)
     
     %%
     str_birth_place.kx  = 0.26;
-    if screen_type == 1
-        % laptop
-        str_birth_place.ky  = 0.441+ky_name;
-    else
-        % VNC
-        str_birth_place.ky  = ky_birth_date+0.031;
+    switch screen_type
+        case 1
+            % laptop
+            str_birth_place.ky  = 0.441+ky_name;
+        case 2
+            % VNC
+            str_birth_place.ky  = ky_birth_date+0.031;
+        case 3
+            % laptop 1920x1080
+            str_birth_place.ky  = ky_birth_date+0.031;
+        otherwise
+            error('Unknown screen_type %d!',screen_type)
     end
     str_birth_place.txt = str.birth_place;
     edit_field(robot,str_birth_place.kx,str_birth_place.ky,str_birth_place.txt)
@@ -231,46 +243,46 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %% second group (marriage or death)
     str_2nd_date.kx  = 0.26;
-    if screen_type == 1
-        % laptop
-        str_2nd_date.ky  = 0.527+ky_name;
-    else
-        % VNC
-        str_2nd_date.ky  = ky_birth_date+0.110; % 0.126 on 1920x1080
+    str_2nd_place.kx  = 0.26;
+    switch screen_type
+        case 1
+            % laptop
+            str_2nd_date.ky  = 0.527+ky_name;
+            str_2nd_place.ky  = 0.566+ky_name;
+        case 2
+            % VNC
+            str_2nd_date.ky  = ky_birth_date+0.110; % 0.126 on 1920x1080
+            str_2nd_place.ky  = ky_birth_date+0.145; % 0.165 on 1920x1080
+        case 3
+            % laptop 1920x1080
+            str_2nd_date.ky  = ky_birth_date+0.110; % 0.126 on 1920x1080
+            str_2nd_place.ky  = ky_birth_date+0.145; % 0.165 on 1920x1080
+        otherwise
+            error('Unknown screen_type %d!',screen_type)
     end
     edit_field(robot,str_2nd_date.kx,str_2nd_date.ky,str_2nd_date.txt)
-    
-    %%
-    str_2nd_place.kx  = 0.26;
-    if screen_type == 1
-        % laptop
-        str_2nd_place.ky  = 0.566+ky_name;
-    else
-        % VNC
-        str_2nd_place.ky  = ky_birth_date+0.145; % 0.165 on 1920x1080
-    end
     edit_field(robot,str_2nd_place.kx,str_2nd_place.ky,str_2nd_place.txt)
     
     %% third group (death)
     str_death_date.kx  = 0.26;
-    if screen_type == 1
-        % laptop
-        str_death_date.ky  = 0.647+ky_name;
-    else
-        % VNC
-        str_death_date.ky  = ky_birth_date+0.225; % 0.255 on 1920x1080
+    str_death_place.kx  = 0.26;
+    switch screen_type
+        case 1
+            % laptop
+            str_death_date.ky  = 0.647+ky_name;
+            str_death_place.ky  = 0.687+ky_name;
+        case 2
+            % VNC
+            str_death_date.ky  = ky_birth_date+0.225; % 0.255 on 1920x1080
+            str_death_place.ky  = ky_birth_date+0.265; % 0.295 on 1920x1080
+        case 3
+            % laptop 1920x1080
+            str_death_date.ky  = ky_birth_date+0.225; % 0.255 on 1920x1080
+            str_death_place.ky  = ky_birth_date+0.265; % 0.295 on 1920x1080
+        otherwise
+            error('Unknown screen_type %d!',screen_type)
     end
     edit_field(robot,str_death_date.kx,str_death_date.ky,str_death_date.txt)
-    
-    %%
-    str_death_place.kx  = 0.26;
-    if screen_type == 1
-        % laptop
-        str_death_place.ky  = 0.687+ky_name;
-    else
-        % VNC
-        str_death_place.ky  = ky_birth_date+0.265; % 0.295 on 1920x1080
-    end
     edit_field(robot,str_death_place.kx,str_death_place.ky,str_death_place.txt)
     
     
@@ -294,25 +306,27 @@ if ~flg_error_page && flg_is_blue && flg_is_light_blue && flg_is_yellow
     
     %% clock on "source" to make the other source fields be shown
     str_src_link.kx  = 0.04;
-    if screen_type == 1
-        % laptop
-        str_src_link.ky  = 0.769; % 0.775 on old Firefox
-    else
-        % VNC
-        str_src_link.ky  = 0.78; % 0.76 on 1920x1080
+    str_src_id.kx  = 0.28;
+    switch screen_type
+        case 1
+            % laptop
+            str_src_link.ky  = 0.769; % 0.775 on old Firefox
+            str_src_id.ky  = 0.81;
+        case 2
+            % VNC
+            str_src_link.ky  = 0.76; % 0.76 on 1920x1080 & 2048x1152
+            str_src_id.ky  = 0.816; % 0.79 on 1920x1080
+        case 3
+            % laptop 1920x1080
+            str_src_link.ky  = 0.76; % 0.76 on 1920x1080 & 2048x1152
+            str_src_id.ky  = 0.79;
+        otherwise
+            error('Unknown screen_type %d!',screen_type)
     end
     robot_wrapper('mouse_move',{robot,width*str_src_link.kx, height*str_src_link.ky});
     robot_wrapper('mouse_click',{robot,'left'});
     
     %% enter source
-    str_src_id.kx  = 0.28;
-    if screen_type == 1
-        % laptop
-        str_src_id.ky  = 0.81;
-    else
-        % VNC
-        str_src_id.ky  = 0.816; % 0.79 on 1920x1080
-    end
     robot_wrapper('mouse_move',{robot,width*str_src_id.kx, height*str_src_id.ky});
     robot_wrapper('mouse_click',{robot,'left'});
     robot_wrapper('key_press',{robot,'^(a)'}); % select all
