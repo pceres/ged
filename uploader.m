@@ -17,7 +17,7 @@
 %
 %   action values:
 %       'search': search for a record in the str_archivio archive inside
-%                 the  PGV site via SOAP q'anauery.
+%                 the  PGV site via SOAP query.
 %                 params={str_archivio,wsdl_url,list_records}
 %                   str_archivio  : archive struct, with fields:
 %                       archivio  : matrix cell array archive as loaded by 'go.m'
@@ -31,7 +31,7 @@
 %                   list_records  : list of people to be searched, in
 %                                   the form:
 %                                   - [record1 record2 ... recordN],
-%                                     with recordI as str_archivio.archivio(I,:)
+%                                     with record I as str_archivio.archivio(I,:)
 %       'browse': scan the PhpGedView online data, looking for persons or
 %                 families whose gedcom data can be updated with data from
 %                 flat archive and params = {str_archivio,wsdl_url,list_pid,flg_skip_real_update,arcfile}
@@ -127,7 +127,9 @@
 % flg_skip_real_update = 1; % 1 -> just scan the pgv database, but don't update it
 % arcfile = 'uploader_memory'; % archine matfile
 %
-% result2 = uploader('search',{str_archivio,struct('wsdl_url',wsdl_url,'SID',''),result.records});
+% wsdl_url  = input('WSDL url:','s')
+% result2 = uploader('search',{str_archivio,struct('wsdl_url',wsdl_url,'SID',''),str_archivio.archivio(Result.mask_id(1),:)})
+% %result2 = uploader('search',{str_archivio,struct('wsdl_url',wsdl_url,'SID',''),result.records});
 %
 %
 % result = uploader('browse',{str_archivio,wsdl_url,list_pid,flg_skip_real_update,arcfile});
@@ -415,6 +417,7 @@ function gedcom_txt = prepare_gedcom_str(str_record_info,PID,famc,fams)
 
 
 ks_givn         = str_record_info. ks_givn;
+ks_prefix_surn  = str_record_info. ks_prefix_surn;
 ks_surn         = str_record_info. ks_surn;
 sex             = str_record_info. sex;
 ks_nasc         = str_record_info. ks_nasc;
@@ -439,15 +442,26 @@ ks_SID          = str_record_info. ks_SID;
 gedcom_lines = {
     sprintf('0 @%s@ INDI',PID);
     };
-    
+
+if isempty(ks_prefix_surn)
+    cells_name = {
+        sprintf('1 NAME %s /%s/',ks_givn,ks_surn);
+        sprintf('2 GIVN %s',ks_givn);
+        sprintf('2 SURN %s',ks_surn);
+        };
+else
+    cells_name = {
+        sprintf('1 NAME %s /%s %s/',ks_givn,ks_prefix_surn,ks_surn);
+        sprintf('2 GIVN %s',ks_givn);
+        sprintf('2 SPFX %s',ks_prefix_surn);
+        sprintf('2 SURN %s',ks_surn);
+        };
+end
+
 % name and surname
 gedcom_lines = [
     gedcom_lines;
-    {
-    sprintf('1 NAME %s /%s/',ks_givn,ks_surn);
-    sprintf('2 GIVN %s',ks_givn);
-    sprintf('2 SURN %s',ks_surn);
-    };
+    cells_name;
     ];
     
 % sex
@@ -3544,7 +3558,7 @@ if ~isempty(ks_matr_) && isempty(ks_note)
 else
     ks_matr_luo = '';
     if ~isempty(ks_matr_)
-        fprintf(1,'Lascio il luogo di matrimonio vuoto perché ci sono delle note. Verifica:\n\t%s\n',ks_note);
+        fprintf(1,'Lascio il luogo di matrimonio vuoto perchï¿½ ci sono delle note. Verifica:\n\t%s\n',ks_note);
     end
 end
 
